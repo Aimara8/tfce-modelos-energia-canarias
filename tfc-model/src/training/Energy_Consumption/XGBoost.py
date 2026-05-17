@@ -36,13 +36,16 @@ import xgboost as xgb
 # ─────────────────────────────────────────────────────────────
 # Rutas relativas robustas usando la carpeta raíz del proyecto
 ROOT_DIR    = Path(__file__).resolve().parents[3]  # tfc-model
+SRC_DIR     = ROOT_DIR / "src"
 DATA_PATH   = ROOT_DIR / "data" / "final_demand_consumption_dataset.csv"
 
 RANDOM_SEED = 42
 TEST_RATIO  = 0.2
 
-OUTPUT_DIR  = ROOT_DIR / "models" / "consumption_energy_demand"
-OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
+MODEL_DIR   = SRC_DIR / "models" / "consumption_energy_demand"
+EVAL_DIR    = SRC_DIR / "evaluation" / "consumption_energy_demand"
+MODEL_DIR.mkdir(parents=True, exist_ok=True)
+EVAL_DIR.mkdir(parents=True, exist_ok=True)
 
 # Todos los targets que quieres modelar
 SECTOR_TARGETS = {
@@ -291,13 +294,13 @@ for sector, target_col in SECTOR_TARGETS.items():
     all_metrics.extend([m_tr, m_te])
 
     # 5.6 Guardar modelo
-    final_model.save_model(str(OUTPUT_DIR / f"xgboost_{sector}.json"))
+    final_model.save_model(str(MODEL_DIR / f"xgboost_{sector}.json"))
 
 # ─────────────────────────────────────────────────────────────
 # 6. TABLA DE MÉTRICAS COMPLETA
 # ─────────────────────────────────────────────────────────────
 metrics_df = pd.DataFrame(all_metrics)[["sector", "split", "MAE", "RMSE", "R2", "MAPE", "WMAPE"]]
-metrics_df.to_csv(OUTPUT_DIR / "metricas_todos_sectores.csv", index=False)
+metrics_df.to_csv(EVAL_DIR / "metricas_todos_sectores.csv", index=False)
 
 print("\n\n" + "=" * 65)
 print("RESUMEN METRICAS TEST — todos los sectores")
@@ -342,7 +345,7 @@ for ax, (sector, (model, feats, tdf, tcol)) in zip(axes, trained_models.items())
 fig.suptitle("Real vs Predicho (test) — Canarias por sector", fontsize=14)
 fig.autofmt_xdate()
 fig.tight_layout()
-fig.savefig(OUTPUT_DIR / "01_real_vs_predicho_sectores.png", bbox_inches="tight")
+fig.savefig(EVAL_DIR / "01_real_vs_predicho_sectores.png", bbox_inches="tight")
 plt.close()
 print("   [OK] 01_real_vs_predicho_sectores.png")
 
@@ -363,7 +366,7 @@ for ax, (sector, (model, feats, tdf, tcol)) in zip(axes, trained_models.items())
 
 fig.suptitle("Scatter Real vs Predicho — por sector", fontsize=13)
 fig.tight_layout()
-fig.savefig(OUTPUT_DIR / "02_scatter_sectores.png", bbox_inches="tight")
+fig.savefig(EVAL_DIR / "02_scatter_sectores.png", bbox_inches="tight")
 plt.close()
 print("   [OK] 02_scatter_sectores.png")
 
@@ -383,7 +386,7 @@ for ax, (sector, (model, feats, tdf, tcol)) in zip(axes, trained_models.items())
 
 fig.suptitle("Distribucion de Residuos — por sector", fontsize=13)
 fig.tight_layout()
-fig.savefig(OUTPUT_DIR / "03_residuos_sectores.png", bbox_inches="tight")
+fig.savefig(EVAL_DIR / "03_residuos_sectores.png", bbox_inches="tight")
 plt.close()
 print("   [OK] 03_residuos_sectores.png")
 
@@ -399,7 +402,7 @@ imp[::-1].plot(kind="barh", ax=ax, color="#2c7bb6")
 ax.set_title("Top 20 features — Sector Total", fontsize=12)
 ax.set_xlabel("Importancia (gain)")
 fig.tight_layout()
-fig.savefig(OUTPUT_DIR / "04_feature_importance_total.png", bbox_inches="tight")
+fig.savefig(EVAL_DIR / "04_feature_importance_total.png", bbox_inches="tight")
 plt.close()
 print("   [OK] 04_feature_importance_total.png")
 
@@ -421,7 +424,7 @@ ax.set_title("MAPE por municipio — Sector Total (test)", fontsize=12)
 ax.set_xlabel("MAPE (%)")
 ax.legend()
 fig.tight_layout()
-fig.savefig(OUTPUT_DIR / "05_mape_municipios_total.png", bbox_inches="tight")
+fig.savefig(EVAL_DIR / "05_mape_municipios_total.png", bbox_inches="tight")
 plt.close()
 print("   [OK] 05_mape_municipios_total.png")
 
@@ -438,7 +441,7 @@ for ax, col in zip(axes, ["MAE", "RMSE", "R2", "MAPE", "WMAPE"]):
 
 fig.suptitle("Comparativa de metricas (test) — todos los sectores", fontsize=13)
 fig.tight_layout()
-fig.savefig(OUTPUT_DIR / "06_comparativa_metricas.png", bbox_inches="tight")
+fig.savefig(EVAL_DIR / "06_comparativa_metricas.png", bbox_inches="tight")
 plt.close()
 print("   [OK] 06_comparativa_metricas.png")
 
@@ -453,11 +456,12 @@ for sector, (model, feats, tdf, tcol) in trained_models.items():
         preds_all = preds_all.merge(tmp, on=["municipality", "date"], how="outer",
                                     suffixes=("", f"_{sector}"))
 
-preds_all.to_csv(OUTPUT_DIR / "predicciones_test_todos.csv", index=False)
+preds_all.to_csv(EVAL_DIR / "predicciones_test_todos.csv", index=False)
 
 print("\n" + "=" * 65)
 print("PIPELINE COMPLETADO.")
-print(f"Resultados en: {OUTPUT_DIR}")
+print(f"Modelos en: {MODEL_DIR}")
+print(f"Evaluaciones en: {EVAL_DIR}")
 print("=" * 65)
 
 # ─────────────────────────────────────────────────────────────
