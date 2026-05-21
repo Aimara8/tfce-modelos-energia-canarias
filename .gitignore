@@ -6,3 +6,6 @@ tfc-model/data/*.csv
 # Common Python artifacts
 __pycache__/
 *.py[cod]
+
+# Local app logs
+tfc-model/logs/

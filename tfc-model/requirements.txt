@@ -5,3 +5,8 @@ matplotlib
 seaborn
 joblib
 xgboost
+fastapi
+uvicorn[standard]
+pydantic
+streamlit
+requests
