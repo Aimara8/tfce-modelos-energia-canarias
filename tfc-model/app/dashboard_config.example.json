@@ -1,0 +1,14 @@
+[
+  {
+    "title": "Panel de Consumo en Power BI",
+    "provider": "powerbi",
+    "description": "Sustituye esta URL por el enlace de embeber de tu informe de Power BI.",
+    "embed_url": "https://app.powerbi.com/reportEmbed?reportId=REPLACE_ME&autoAuth=true&ctid=REPLACE_ME"
+  },
+  {
+    "title": "Panel de Renovables en Tableau",
+    "provider": "tableau",
+    "description": "Sustituye esta URL por el enlace de embeber de tu dashboard de Tableau.",
+    "embed_url": "https://public.tableau.com/views/REPLACE_ME?:showVizHome=no"
+  }
+]

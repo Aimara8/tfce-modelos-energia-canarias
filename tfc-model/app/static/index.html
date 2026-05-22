@@ -1,0 +1,484 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>TFC Energy Forecast Demo</title>
+  <style>
+    :root {
+      --bg: #eef4ef;
+      --panel: #ffffff;
+      --ink: #183329;
+      --muted: #55786a;
+      --accent: #0d8b6f;
+      --accent-2: #f59e0b;
+      --border: #d7e5de;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      font-family: "Segoe UI", sans-serif;
+      background:
+        radial-gradient(circle at top left, rgba(13,139,111,.18), transparent 28%),
+        radial-gradient(circle at top right, rgba(245,158,11,.12), transparent 22%),
+        var(--bg);
+      color: var(--ink);
+    }
+    .wrap {
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 32px 20px 56px;
+    }
+    h1 {
+      margin: 0 0 10px;
+      font-size: 2rem;
+    }
+    p.lead {
+      margin: 0 0 28px;
+      color: var(--muted);
+      max-width: 800px;
+    }
+    .grid {
+      display: grid;
+      gap: 20px;
+      grid-template-columns: repeat(auto-fit, minmax(340px, 1fr));
+    }
+    .dashboards {
+      display: grid;
+      gap: 20px;
+      grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+      margin-top: 28px;
+    }
+    .card {
+      background: var(--panel);
+      border: 1px solid var(--border);
+      border-radius: 18px;
+      padding: 20px;
+      box-shadow: 0 18px 44px rgba(24,51,41,.08);
+    }
+    h2 {
+      margin-top: 0;
+      font-size: 1.2rem;
+    }
+    .hint {
+      margin: 0 0 16px;
+      color: var(--muted);
+      font-size: .95rem;
+    }
+    form {
+      display: grid;
+      gap: 12px;
+    }
+    .row {
+      display: grid;
+      gap: 12px;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+    label {
+      display: grid;
+      gap: 6px;
+      font-size: .92rem;
+    }
+    input, select, button {
+      width: 100%;
+      padding: 10px 12px;
+      border-radius: 10px;
+      border: 1px solid var(--border);
+      font: inherit;
+    }
+    button {
+      border: 0;
+      background: linear-gradient(135deg, var(--accent), #146d6f);
+      color: white;
+      font-weight: 600;
+      cursor: pointer;
+    }
+    button.secondary {
+      background: linear-gradient(135deg, var(--accent-2), #f97316);
+    }
+    .result {
+      margin-top: 16px;
+      padding: 14px;
+      border-radius: 12px;
+      background: #f4fbf7;
+      border: 1px solid #cae7d8;
+      min-height: 68px;
+      white-space: pre-wrap;
+    }
+    .mono {
+      font-family: Consolas, monospace;
+      font-size: .92rem;
+    }
+    .provider {
+      display: inline-block;
+      margin-bottom: 10px;
+      padding: 4px 10px;
+      border-radius: 999px;
+      background: #ebf6f1;
+      color: var(--accent);
+      font-size: .78rem;
+      font-weight: 700;
+      letter-spacing: .04em;
+      text-transform: uppercase;
+    }
+    .dashboard-frame {
+      width: 100%;
+      min-height: 420px;
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      background: #f8fbf9;
+    }
+    .empty-state {
+      margin-top: 28px;
+      padding: 18px 20px;
+      border: 1px dashed var(--border);
+      border-radius: 16px;
+      color: var(--muted);
+      background: rgba(255,255,255,.5);
+    }
+    @media (max-width: 760px) {
+      .row { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <h1>TFC Energy Forecast Demo</h1>
+    <p class="lead">
+      Cliente web local para probar la API de inferencia del proyecto. La prediccion de consumo
+      usa meteorologia, municipio y lags del target. La prediccion eolica usa meteorologia agregada
+      de Canarias y variables temporales derivadas.
+    </p>
+
+    <div class="grid">
+      <section class="card">
+        <h2>Prediccion de Consumo</h2>
+        <p class="hint">Introduce valores ya agregados y los lags necesarios para el sector elegido.</p>
+        <form id="consumption-form">
+          <div class="row">
+            <label>Sector
+              <select name="sector" id="consumption-sector"></select>
+            </label>
+            <label>Municipio
+              <select name="municipality" id="municipality"></select>
+            </label>
+          </div>
+          <div class="row">
+            <label>Fecha
+              <input type="date" name="date" value="2025-06-30" required>
+            </label>
+            <label>Estaciones utiles
+              <input type="number" name="weather_station_count" value="3" min="0" step="1" required>
+            </label>
+          </div>
+          <div class="row">
+            <label>Temp media C
+              <input type="number" name="temp_avg_c" value="23" step="0.1" required>
+            </label>
+            <label>Temp maxima C
+              <input type="number" name="temp_max_c" value="27" step="0.1" required>
+            </label>
+          </div>
+          <div class="row">
+            <label>Temp minima C
+              <input type="number" name="temp_min_c" value="19" step="0.1" required>
+            </label>
+            <label>Humedad %
+              <input type="number" name="humidity_avg_pct" value="66" step="0.1" required>
+            </label>
+          </div>
+          <div class="row">
+            <label>Dew point C
+              <input type="number" name="dew_point_avg_c" value="17" step="0.1" required>
+            </label>
+            <label>Presion hPa
+              <input type="number" name="pressure_avg_hpa" value="1015" step="0.1" required>
+            </label>
+          </div>
+          <div class="row">
+            <label>Precipitacion media mm
+              <input type="number" name="precip_intensity_avg_mm" value="0" step="0.1" required>
+            </label>
+            <label>Lluvia diaria mm
+              <input type="number" name="rain_daily_mm" value="0" step="0.1" required>
+            </label>
+          </div>
+          <div class="row">
+            <label>Viento medio m/s
+              <input type="number" name="wind_speed_avg_ms" value="5" step="0.1" required>
+            </label>
+            <label>Viento maximo m/s
+              <input type="number" name="wind_speed_max_ms" value="9" step="0.1" required>
+            </label>
+          </div>
+          <div class="row">
+            <label>Desv viento m/s
+              <input type="number" name="wind_speed_sdev_ms" value="1.5" step="0.1" required>
+            </label>
+            <label>Direccion media viento
+              <input type="number" name="wind_dir_avg_deg" value="180" step="0.1" required>
+            </label>
+          </div>
+          <div class="row">
+            <label>Lag 1d
+              <input type="number" name="lag_1d" value="100" step="0.1" required>
+            </label>
+            <label>Lag 7d
+              <input type="number" name="lag_7d" value="98" step="0.1" required>
+            </label>
+          </div>
+          <div class="row">
+            <label>Lag 14d
+              <input type="number" name="lag_14d" value="97" step="0.1" required>
+            </label>
+            <label>Lag 28d
+              <input type="number" name="lag_28d" value="96" step="0.1" required>
+            </label>
+          </div>
+          <div class="row">
+            <label>Media movil 7d
+              <input type="number" name="rolling_7d_mean" value="99" step="0.1" required>
+            </label>
+            <label>Media movil 30d
+              <input type="number" name="rolling_30d_mean" value="95" step="0.1" required>
+            </label>
+          </div>
+          <label>Desv movil 7d
+            <input type="number" name="rolling_7d_std" value="4" step="0.1" required>
+          </label>
+          <button type="submit">Predecir consumo</button>
+        </form>
+        <div class="result mono" id="consumption-result">Esperando prediccion...</div>
+      </section>
+
+      <section class="card">
+        <h2>Prediccion Eolica</h2>
+        <p class="hint">Selecciona el modelo y aporta los lags y estadisticos necesarios para inferencia.</p>
+        <form id="renewable-form">
+          <div class="row">
+            <label>Modelo
+              <select name="model">
+                <option value="hgb">HistGradientBoosting</option>
+                <option value="ridge">Ridge</option>
+              </select>
+            </label>
+            <label>Fecha
+              <input type="date" name="date" value="2025-06-30" required>
+            </label>
+          </div>
+          <div class="row">
+            <label>Municipios cubiertos
+              <input type="number" name="canarias_weather_municipality_count" value="35" min="0" step="1" required>
+            </label>
+            <label>Estaciones cubiertas
+              <input type="number" name="canarias_weather_station_count" value="50" min="0" step="1" required>
+            </label>
+          </div>
+          <div class="row">
+            <label>Temp media C
+              <input type="number" name="temp_avg_c" value="24" step="0.1" required>
+            </label>
+            <label>Temp maxima C
+              <input type="number" name="temp_max_c" value="28" step="0.1" required>
+            </label>
+          </div>
+          <div class="row">
+            <label>Temp minima C
+              <input type="number" name="temp_min_c" value="20" step="0.1" required>
+            </label>
+            <label>Presion hPa
+              <input type="number" name="pressure_avg_hpa" value="1014" step="0.1" required>
+            </label>
+          </div>
+          <div class="row">
+            <label>Dew point C
+              <input type="number" name="dew_point_avg_c" value="18" step="0.1" required>
+            </label>
+            <label>Precipitacion media mm
+              <input type="number" name="precip_intensity_avg_mm" value="0" step="0.1" required>
+            </label>
+          </div>
+          <div class="row">
+            <label>Lluvia diaria mm
+              <input type="number" name="rain_daily_mm" value="0" step="0.1" required>
+            </label>
+            <label>Humedad %
+              <input type="number" name="humidity_avg_pct" value="68" step="0.1" required>
+            </label>
+          </div>
+          <div class="row">
+            <label>Dir viento media
+              <input type="number" name="wind_dir_avg_deg" value="200" step="0.1" required>
+            </label>
+            <label>Dir viento maxima
+              <input type="number" name="wind_dir_max_deg" value="240" step="0.1" required>
+            </label>
+          </div>
+          <div class="row">
+            <label>Desv direccion viento
+              <input type="number" name="wind_dir_sdev_deg" value="40" step="0.1" required>
+            </label>
+            <label>Viento medio m/s
+              <input type="number" name="wind_speed_avg_ms" value="7" step="0.1" required>
+            </label>
+          </div>
+          <div class="row">
+            <label>Viento maximo m/s
+              <input type="number" name="wind_speed_max_ms" value="12" step="0.1" required>
+            </label>
+            <label>Desv viento m/s
+              <input type="number" name="wind_speed_sdev_ms" value="2" step="0.1" required>
+            </label>
+          </div>
+          <div class="row">
+            <label>Lag 1d
+              <input type="number" name="lag_1d" value="5200" step="0.1" required>
+            </label>
+            <label>Lag 2d
+              <input type="number" name="lag_2d" value="5100" step="0.1" required>
+            </label>
+          </div>
+          <div class="row">
+            <label>Lag 3d
+              <input type="number" name="lag_3d" value="5000" step="0.1" required>
+            </label>
+            <label>Media movil 3d
+              <input type="number" name="rolling_3d_mean" value="5100" step="0.1" required>
+            </label>
+          </div>
+          <div class="row">
+            <label>Media movil 7d
+              <input type="number" name="rolling_7d_mean" value="5050" step="0.1" required>
+            </label>
+            <label>Desv movil 7d
+              <input type="number" name="rolling_7d_std" value="320" step="0.1" required>
+            </label>
+          </div>
+          <div class="row">
+            <label>Media movil 14d
+              <input type="number" name="rolling_14d_mean" value="4950" step="0.1" required>
+            </label>
+            <label>Hidroeolica lag1
+              <input type="number" name="hidroeolica_lag1" value="110" step="0.1" required>
+            </label>
+          </div>
+          <button type="submit" class="secondary">Predecir eolica</button>
+        </form>
+        <div class="result mono" id="renewable-result">Esperando prediccion...</div>
+      </section>
+    </div>
+
+    <section id="dashboards-section">
+      <h2 style="margin: 30px 0 8px;">Dashboards Embebidos</h2>
+      <p class="lead" style="margin-bottom: 16px;">
+        Puedes conectar aqui tus paneles de Power BI o Tableau publicados para combinar prediccion e inteligencia visual.
+      </p>
+      <div id="dashboards-empty" class="empty-state">
+        No hay dashboards configurados todavia. Crea <span class="mono">app/dashboard_config.json</span>
+        a partir de <span class="mono">app/dashboard_config.example.json</span> y pega tus URLs de embeber.
+      </div>
+      <div id="dashboards" class="dashboards" hidden></div>
+    </section>
+  </div>
+
+  <script>
+    async function loadMetadata() {
+      const response = await fetch("/api/metadata");
+      const data = await response.json();
+
+      const sectorSelect = document.getElementById("consumption-sector");
+      data.consumption.sectors.forEach((sector) => {
+        const option = document.createElement("option");
+        option.value = sector;
+        option.textContent = sector;
+        sectorSelect.appendChild(option);
+      });
+
+      const municipalitySelect = document.getElementById("municipality");
+      data.consumption.municipalities.forEach((name) => {
+        const option = document.createElement("option");
+        option.value = name;
+        option.textContent = name;
+        municipalitySelect.appendChild(option);
+      });
+      municipalitySelect.value = data.consumption.municipalities[0];
+
+      renderDashboards(data.dashboards || []);
+    }
+
+    function renderDashboards(dashboards) {
+      const container = document.getElementById("dashboards");
+      const empty = document.getElementById("dashboards-empty");
+
+      if (!dashboards.length) {
+        container.hidden = true;
+        empty.hidden = false;
+        return;
+      }
+
+      container.innerHTML = "";
+      dashboards.forEach((dashboard) => {
+        const article = document.createElement("article");
+        article.className = "card";
+        article.innerHTML = `
+          <div class="provider">${dashboard.provider}</div>
+          <h2>${dashboard.title}</h2>
+          <p class="hint">${dashboard.description || "Dashboard embebido del proyecto."}</p>
+          <iframe
+            class="dashboard-frame"
+            src="${dashboard.embed_url}"
+            title="${dashboard.title}"
+            loading="lazy"
+            allowfullscreen>
+          </iframe>
+        `;
+        container.appendChild(article);
+      });
+
+      empty.hidden = true;
+      container.hidden = false;
+    }
+
+    function formToJson(form) {
+      const data = {};
+      const formData = new FormData(form);
+      for (const [key, value] of formData.entries()) {
+        if (key === "date" || key === "sector" || key === "municipality" || key === "model") {
+          data[key] = value;
+        } else {
+          data[key] = Number(value);
+        }
+      }
+      return data;
+    }
+
+    async function submitPrediction(formId, endpoint, resultId) {
+      const form = document.getElementById(formId);
+      const result = document.getElementById(resultId);
+      form.addEventListener("submit", async (event) => {
+        event.preventDefault();
+        result.textContent = "Calculando...";
+        const payload = formToJson(form);
+        try {
+          const response = await fetch(endpoint, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(payload),
+          });
+          const data = await response.json();
+          if (!response.ok) {
+            throw new Error(data.detail || "Error de inferencia");
+          }
+          result.textContent = JSON.stringify(data, null, 2);
+        } catch (error) {
+          result.textContent = error.message;
+        }
+      });
+    }
+
+    loadMetadata();
+    submitPrediction("consumption-form", "/api/predict/consumption", "consumption-result");
+    submitPrediction("renewable-form", "/api/predict/eolica", "renewable-result");
+  </script>
+</body>
+</html>
