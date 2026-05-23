@@ -16,15 +16,17 @@ Optimización: RandomizedSearchCV con TimeSeriesSplit
 
 import pandas as pd
 import numpy as np
+import matplotlib
+matplotlib.use("Agg")
 import matplotlib.pyplot as plt
 import matplotlib.dates as mdates
 import seaborn as sns
 from pathlib import Path
+import json
 import time
 import warnings
 warnings.filterwarnings("ignore")
 
-from sklearn.preprocessing import LabelEncoder
 from sklearn.metrics import mean_absolute_error, mean_squared_error, r2_score
 from sklearn.model_selection import RandomizedSearchCV, TimeSeriesSplit
 from scipy.stats import randint, uniform
@@ -41,6 +43,7 @@ DATA_PATH   = ROOT_DIR / "data" / "final_demand_consumption_dataset.csv"
 
 RANDOM_SEED = 42
 TEST_RATIO  = 0.2
+VAL_RATIO   = 0.2
 
 MODEL_DIR   = SRC_DIR / "models" / "consumption_energy_demand"
 EVAL_DIR    = SRC_DIR / "evaluation" / "consumption_energy_demand"
@@ -65,6 +68,10 @@ print("1. CARGA DE DATOS")
 print("=" * 65)
 
 df_raw = pd.read_csv(DATA_PATH, parse_dates=["date"])
+MUNICIPALITY_MAPPING = {
+    name: index
+    for index, name in enumerate(sorted(df_raw["municipality"].dropna().unique().tolist()))
+}
 print(f"   Filas     : {len(df_raw):,}")
 print(f"   Columnas  : {df_raw.shape[1]}")
 print(f"   Fechas    : {df_raw['date'].min().date()} -> {df_raw['date'].max().date()}")
@@ -104,9 +111,8 @@ def build_features(df_in: pd.DataFrame, target_col: str) -> pd.DataFrame:
     df["cdd"]          = np.maximum(df["temp_avg_c"] - BASE_TEMP, 0)
     df["temp_range_c"] = df["temp_max_c"] - df["temp_min_c"]
 
-    # Codificación municipio
-    le = LabelEncoder()
-    df["municipality_enc"] = le.fit_transform(df["municipality"])
+    # Codificación municipio estable y persistible para inferencia.
+    df["municipality_enc"] = df["municipality"].map(MUNICIPALITY_MAPPING)
 
     # Lags y rolling – ordenar primero por municipio+fecha
     df = df.sort_values(["municipality", "date"]).reset_index(drop=True)
@@ -211,6 +217,7 @@ CV_SPLITS = 5    # splits temporales
 # ─────────────────────────────────────────────────────────────
 all_metrics    = []
 trained_models = {}   # sector -> (model, feats, test_df, target_col)
+baseline_rows  = []
 
 for sector, target_col in SECTOR_TARGETS.items():
 
@@ -222,18 +229,24 @@ for sector, target_col in SECTOR_TARGETS.items():
     df    = build_features(df_raw, target_col)
     feats = [f for f in FEATURES if f in df.columns]
 
-    # 5.2 Split temporal estricto
+    # 5.2 Split temporal estricto: train -> validacion -> test.
+    # El test no participa ni en tuning ni en early stopping.
     df_sorted = df.sort_values("date").reset_index(drop=True)
-    cutoff    = int(len(df_sorted) * (1 - TEST_RATIO))
-    train_df  = df_sorted.iloc[:cutoff]
-    test_df   = df_sorted.iloc[cutoff:]
+    test_start = int(len(df_sorted) * (1 - TEST_RATIO))
+    trainval_df = df_sorted.iloc[:test_start]
+    test_df = df_sorted.iloc[test_start:]
+    val_start = int(len(trainval_df) * (1 - VAL_RATIO))
+    train_df = trainval_df.iloc[:val_start]
+    val_df = trainval_df.iloc[val_start:]
 
     X_train = train_df[feats].values
     y_train = train_df[target_col].values
+    X_val   = val_df[feats].values
+    y_val   = val_df[target_col].values
     X_test  = test_df[feats].values
     y_test  = test_df[target_col].values
 
-    print(f"  Train: {len(train_df):,} filas | Test: {len(test_df):,} filas")
+    print(f"  Train: {len(train_df):,} filas | Val: {len(val_df):,} filas | Test: {len(test_df):,} filas")
 
     # 5.3 RandomizedSearchCV con TimeSeriesSplit
     print(f"\n  [RandomizedSearchCV] {N_ITER} iteraciones x {CV_SPLITS} folds ...")
@@ -275,23 +288,37 @@ for sector, target_col in SECTOR_TARGETS.items():
     )
     final_model.fit(
         X_train, y_train,
-        eval_set=[(X_test, y_test)],
+        eval_set=[(X_val, y_val)],
         verbose=False,
     )
     trained_models[sector] = (final_model, feats, test_df, target_col)
 
     # 5.5 Métricas train / test
     y_pred_tr = final_model.predict(X_train)
+    y_pred_va = final_model.predict(X_val)
     y_pred_te = final_model.predict(X_test)
 
     print("\n  [TRAIN]")
     m_tr = compute_metrics("train", y_train, y_pred_tr)
+    print("\n  [VALIDATION]")
+    m_va = compute_metrics("validation", y_val, y_pred_va)
     print("\n  [TEST]")
     m_te = compute_metrics("test",  y_test,  y_pred_te)
 
     m_tr["sector"] = sector
+    m_va["sector"] = sector
     m_te["sector"] = sector
-    all_metrics.extend([m_tr, m_te])
+    all_metrics.extend([m_tr, m_va, m_te])
+
+    for baseline_name, pred_col in [
+        ("lag_1d", "lag_1d"),
+        ("lag_7d", "lag_7d"),
+        ("rolling_7d_mean", "rolling_7d_mean"),
+    ]:
+        baseline_metric = compute_metrics(f"baseline_{baseline_name}", y_test, test_df[pred_col].values)
+        baseline_metric["sector"] = sector
+        baseline_metric["baseline"] = baseline_name
+        baseline_rows.append(baseline_metric)
 
     # 5.6 Guardar modelo
     final_model.save_model(str(MODEL_DIR / f"xgboost_{sector}.json"))
@@ -301,6 +328,29 @@ for sector, target_col in SECTOR_TARGETS.items():
 # ─────────────────────────────────────────────────────────────
 metrics_df = pd.DataFrame(all_metrics)[["sector", "split", "MAE", "RMSE", "R2", "MAPE", "WMAPE"]]
 metrics_df.to_csv(EVAL_DIR / "metricas_todos_sectores.csv", index=False)
+pd.DataFrame(baseline_rows)[["sector", "baseline", "split", "MAE", "RMSE", "R2", "MAPE", "WMAPE"]].to_csv(
+    EVAL_DIR / "baseline_consumo.csv",
+    index=False,
+)
+
+metadata = {
+    "problem": "consumption_energy_demand",
+    "target_columns": SECTOR_TARGETS,
+    "features": FEATURES,
+    "municipality_mapping": MUNICIPALITY_MAPPING,
+    "split": {
+        "strategy": "temporal_train_validation_test",
+        "test_ratio": TEST_RATIO,
+        "validation_ratio_within_trainval": VAL_RATIO,
+        "test_is_never_used_for_tuning": True,
+    },
+    "anti_leakage": [
+        "lags are created with groupby municipality shift(lag)",
+        "rolling features are shifted by one day before rolling",
+        "early stopping uses validation split, not final test",
+    ],
+}
+(MODEL_DIR / "metadata_consumption.json").write_text(json.dumps(metadata, indent=2, ensure_ascii=False), encoding="utf-8")
 
 print("\n\n" + "=" * 65)
 print("RESUMEN METRICAS TEST — todos los sectores")

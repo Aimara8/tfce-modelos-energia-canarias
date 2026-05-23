@@ -6,6 +6,7 @@ import plotly.graph_objects as go
 import requests
 import streamlit as st
 import streamlit.components.v1 as components
+from pathlib import Path
 
 API_URL = "http://localhost:8000"
 
@@ -17,7 +18,7 @@ COLORS = {
     "accent": "#6366f1",
 }
 
-TOTAL_CANARY_MUNICIPALITIES = 88
+TOTAL_CANARY_MUNICIPALITIES = 87
 
 MUNICIPALITY_COORDS = {
     "Adeje": (28.1227, -16.7260), "Agaete": (28.1000, -15.7000), "Alajeró": (28.0621, -17.2407),
@@ -38,6 +39,14 @@ MUNICIPALITY_COORDS = {
     "Vega de San Mateo": (28.0089, -15.5329), "Vilaflor de Chasna": (28.1562, -16.6359),
     "Villa de Mazo": (28.6090, -17.7780), "Yaiza": (28.9529, -13.7656),
 }
+
+COORDS_CSV = Path(__file__).resolve().parents[3] / "tfc-datasets" / "outputs" / "municipality_coordinates_open_meteo.csv"
+if COORDS_CSV.exists():
+    _coords_df = pd.read_csv(COORDS_CSV)
+    MUNICIPALITY_COORDS.update({
+        row["municipality"]: (float(row["latitude"]), float(row["longitude"]))
+        for _, row in _coords_df.dropna(subset=["municipality", "latitude", "longitude"]).iterrows()
+    })
 
 ISLAND_CENTERS = {
     "Lanzarote":     (29.05, -13.65),
@@ -548,7 +557,7 @@ else:
         st.markdown('<div class="slabel">Escenario</div>', unsafe_allow_html=True)
         default_wind_date = pd.to_datetime(metadata["renewable"]["date_max"]).date()
         fecha_eolica  = st.date_input("Fecha", value=default_wind_date, key="fecha_eolica")
-        mun_count     = st.number_input("Municipios con meteorología", value=39, min_value=1, step=1)
+        mun_count     = st.number_input("Municipios con meteorología", value=87, min_value=1, step=1)
         station_count = st.number_input("Estaciones agregadas",        value=50, min_value=1, step=1)
         use_hist_wind = st.checkbox("Meteorología automática agregada", value=True, key="eolica_hist_weather")
         st.warning("La predicción incluye un rango de incertidumbre, no es un valor puntual exacto.")

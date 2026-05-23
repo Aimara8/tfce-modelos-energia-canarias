@@ -7,11 +7,18 @@ Carpeta de entrada para los datasets finales usados por los scripts de entrenami
 - `final_demand_consumption_dataset.csv`
 - `final_renewable_generation_dataset.csv`
 
+Estos son los datasets oficiales actuales para entrenamiento e inferencia. Ya incorporan la ampliacion Open-Meteo:
+
+- consumo: 87/87 municipios ISTAC
+- renovables: meteorologia agregada diaria de Canarias con cobertura ampliada
+- fuente meteorologica: estaciones reales con prioridad; Open-Meteo solo para municipios/dias sin dato observado
+
 ## Funcion De Estos Archivos
 
 - alimentar los scripts de `src/training/`
 - servir como version estable del dataset ya procesado
 - separar claramente datos de entrada de modelos y evaluaciones
+- evitar copias rollback o variantes temporales dentro de `data/`
 
 ## Flujo Recomendado
 

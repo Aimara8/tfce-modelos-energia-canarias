@@ -20,10 +20,13 @@ Métricas: MAE, RMSE, R², MAPE, WMAPE
 
 import pandas as pd
 import numpy as np
+import matplotlib
+matplotlib.use("Agg")
 import matplotlib.pyplot as plt
 import matplotlib.dates as mdates
 import seaborn as sns
 from pathlib import Path
+import json
 import time
 import joblib
 import warnings
@@ -51,6 +54,7 @@ TARGET = "ree_eolica_value"
 
 RANDOM_SEED = 42
 TEST_RATIO  = 0.2
+VAL_RATIO   = 0.2
 
 MODEL_DIR   = SRC_DIR / "models" / "renewable_energy_generation"
 EVAL_DIR    = SRC_DIR / "evaluation" / "renewable_energy_generation"
@@ -166,23 +170,30 @@ FEATURES = [
 ]
 print(f"   Features: {len(FEATURES)}")
 
-cutoff   = int(len(df) * (1 - TEST_RATIO))
-train_df = df.iloc[:cutoff].copy()
-test_df  = df.iloc[cutoff:].copy()
+test_start = int(len(df) * (1 - TEST_RATIO))
+trainval_df = df.iloc[:test_start].copy()
+test_df  = df.iloc[test_start:].copy()
+val_start = int(len(trainval_df) * (1 - VAL_RATIO))
+train_df = trainval_df.iloc[:val_start].copy()
+val_df = trainval_df.iloc[val_start:].copy()
 
 X_train = train_df[FEATURES].values
 y_train = train_df[TARGET].values
+X_val   = val_df[FEATURES].values
+y_val   = val_df[TARGET].values
 X_test  = test_df[FEATURES].values
 y_test  = test_df[TARGET].values
 
 # Imputación (para HGB y XGBoost)
 imputer     = SimpleImputer(strategy="median")
 X_train_imp = imputer.fit_transform(X_train)
+X_val_imp   = imputer.transform(X_val)
 X_test_imp  = imputer.transform(X_test)
 
 print(f"   Train: {len(train_df):,} filas  ({train_df['date'].min().date()} -> {train_df['date'].max().date()})")
+print(f"   Val  : {len(val_df):,} filas  ({val_df['date'].min().date()} -> {val_df['date'].max().date()})")
 print(f"   Test : {len(test_df):,} filas  ({test_df['date'].min().date()} -> {test_df['date'].max().date()})")
-print(f"   Media train: {y_train.mean():.1f}  |  Media test: {y_test.mean():.1f}")
+print(f"   Media train: {y_train.mean():.1f}  |  Media val: {y_val.mean():.1f}  |  Media test: {y_test.mean():.1f}")
 
 # ─────────────────────────────────────────────────────────────
 # 4. MÉTRICAS
@@ -241,10 +252,13 @@ print(f"   Completado en {time.time()-t0:.1f}s | Mejor alpha: {ridge_search.best
 
 ridge_model     = ridge_search.best_estimator_
 y_pred_ridge_tr = ridge_model.predict(X_train)
+y_pred_ridge_va = ridge_model.predict(X_val)
 y_pred_ridge_te = ridge_model.predict(X_test)
 
 print("\n   [TRAIN]")
 m_ridge_tr = compute_metrics("train", y_train, y_pred_ridge_tr)
+print("\n   [VALIDATION]")
+m_ridge_va = compute_metrics("validation", y_val, y_pred_ridge_va)
 print("\n   [TEST]")
 m_ridge_te = compute_metrics("test",  y_test,  y_pred_ridge_te)
 
@@ -288,10 +302,13 @@ print(f"   Mejores params: {hgb_search.best_params_}")
 
 hgb_model     = hgb_search.best_estimator_
 y_pred_hgb_tr = hgb_model.predict(X_train_imp)
+y_pred_hgb_va = hgb_model.predict(X_val_imp)
 y_pred_hgb_te = hgb_model.predict(X_test_imp)
 
 print("\n   [TRAIN]")
 m_hgb_tr = compute_metrics("train", y_train, y_pred_hgb_tr)
+print("\n   [VALIDATION]")
+m_hgb_va = compute_metrics("validation", y_val, y_pred_hgb_va)
 print("\n   [TEST]")
 m_hgb_te = compute_metrics("test",  y_test,  y_pred_hgb_te)
 
@@ -329,6 +346,52 @@ metrics_df = pd.DataFrame([
     {**m_hgb_te,   "modelo": "HGB"},
 ])
 metrics_df.to_csv(EVAL_DIR / "metricas_eolica.csv", index=False)
+pd.DataFrame([
+    {**m_ridge_tr, "modelo": "Ridge"},
+    {**m_ridge_va, "modelo": "Ridge"},
+    {**m_ridge_te, "modelo": "Ridge"},
+    {**m_hgb_tr, "modelo": "HGB"},
+    {**m_hgb_va, "modelo": "HGB"},
+    {**m_hgb_te, "modelo": "HGB"},
+]).to_csv(EVAL_DIR / "metricas_eolica_all_splits.csv", index=False)
+
+baseline_rows = []
+for baseline_name, values in [
+    ("lag_1d", test_df["lag_1d"].values),
+    ("rolling_3d_mean", test_df["rolling_3d_mean"].values),
+    ("rolling_7d_mean", test_df["rolling_7d_mean"].values),
+]:
+    row = compute_metrics(f"baseline_{baseline_name}", y_test, values)
+    row["baseline"] = baseline_name
+    baseline_rows.append(row)
+pd.DataFrame(baseline_rows)[["baseline", "split", "MAE", "RMSE", "R2", "MAPE", "WMAPE"]].to_csv(
+    EVAL_DIR / "baseline_eolica.csv",
+    index=False,
+)
+
+metadata = {
+    "problem": "renewable_energy_generation",
+    "target": TARGET,
+    "features": FEATURES,
+    "split": {
+        "strategy": "temporal_train_validation_test",
+        "test_ratio": TEST_RATIO,
+        "validation_ratio_within_trainval": VAL_RATIO,
+        "test_is_never_used_for_tuning": True,
+    },
+    "anti_leakage": [
+        "target lags use shift(1..3)",
+        "rolling features use shifted target values",
+        "same-day REE technology values are excluded from features",
+        "uncertainty/calibration must be learned on validation, not final test",
+    ],
+    "known_limits": [
+        "weather is aggregated at Canarias daily level",
+        "installed wind capacity and curtailment are not included",
+        "prediction should be presented with uncertainty",
+    ],
+}
+(MODEL_DIR / "metadata_eolica.json").write_text(json.dumps(metadata, indent=2, ensure_ascii=False), encoding="utf-8")
 print(f"\n   Modelos guardados en {MODEL_DIR}")
 print(f"   Evaluacion guardada en {EVAL_DIR}")
 
@@ -481,11 +544,11 @@ print(f"   Evaluaciones en: {EVAL_DIR}")
 print("=" * 65)
 
 print("""
-NOTA PARA EL TFC — Por qué se descartó solar:
-  La generación fotovoltaica en Canarias presenta crecimiento
+NOTA PARA EL TFC - Por que se descarto solar:
+  La generacion fotovoltaica en Canarias presenta crecimiento
   estructural acelerado (+80% entre 2020 y 2025) por nueva
   capacidad instalada. Sin datos de potencia acumulada (MW),
-  el techo estadístico real es R²≈0.42 independientemente del
-  modelo. Se propone como línea de trabajo futuro incorporar
+  el techo estadistico real es R2 aprox. 0.42 independientemente
+  del modelo. Se propone como linea de trabajo futuro incorporar
   datos de capacidad instalada de REE o ISTAC.
 """)
