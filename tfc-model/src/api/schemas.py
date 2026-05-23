@@ -56,7 +56,7 @@ class WindInput(BaseModel):
     fecha: date
     weather: WeatherInput | None = None
     history: WindHistoryInput | None = None
-    canarias_weather_municipality_count: int = Field(39, ge=1)
+    canarias_weather_municipality_count: int = Field(87, ge=1)
     canarias_weather_station_count: int = Field(50, ge=1)
 
 

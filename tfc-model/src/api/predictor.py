@@ -244,7 +244,7 @@ def benchmark_api() -> dict[str, Any]:
         predict_wind({
             "fecha": metadata["renewable"]["date_max"],
             "weather": wind_weather,
-            "canarias_weather_municipality_count": 39,
+            "canarias_weather_municipality_count": 87,
             "canarias_weather_station_count": 50,
         })
         samples.append({"operation": "predict_eolica", "latency_ms": (time.perf_counter() - t0) * 1000})

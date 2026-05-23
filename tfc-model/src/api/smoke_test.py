@@ -40,7 +40,7 @@ def main() -> None:
         "wind": predict_wind({
             "fecha": metadata["renewable"]["date_max"],
             "weather": {**weather, "wind_speed_avg_ms": 7.5, "wind_speed_max_ms": 12.0, "wind_speed_sdev_ms": 2.2},
-            "canarias_weather_municipality_count": 39,
+            "canarias_weather_municipality_count": 87,
             "canarias_weather_station_count": 50,
         }),
     }
