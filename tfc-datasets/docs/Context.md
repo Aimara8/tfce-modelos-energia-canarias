@@ -14,12 +14,14 @@ La idea no es tener un unico dataset gigante, sino dos tablas finales limpias, c
 ### Dataset de demanda
 
 Archivo final:
-- `outputs/final_demand_consumption_dataset.csv`
+- `outputs/final_demand_consumption_dataset_augmented_open_meteo.csv`
+- copia oficial de entrenamiento: `tfc-model/data/final_demand_consumption_dataset.csv`
 
 Objetivo:
 - modelar la demanda electrica diaria
 - trabajar a nivel **municipal**
-- conservar solo filas con al menos algun dato meteorologico real
+- conservar meteorologia real cuando existe
+- rellenar municipios sin cobertura observada con Open-Meteo historico
 
 Cada fila representa:
 - un **municipio**
@@ -28,7 +30,8 @@ Cada fila representa:
 ### Dataset de renovables
 
 Archivo final:
-- `outputs/final_renewable_generation_dataset.csv`
+- `outputs/final_renewable_generation_dataset_augmented_open_meteo.csv`
+- copia oficial de entrenamiento: `tfc-model/data/final_renewable_generation_dataset.csv`
 
 Objetivo:
 - modelar la generacion renovable diaria
@@ -71,6 +74,13 @@ Se usa para:
 - presion
 - precipitacion
 - viento
+
+### Open-Meteo
+
+- **Open-Meteo Historical Weather API**
+- se usa solo para municipios sin cobertura meteorologica observada
+- las estaciones reales mantienen prioridad
+- las coordenadas municipales quedan fijadas en `outputs/municipality_coordinates_open_meteo.csv`
 
 ### Generacion renovable
 
@@ -121,6 +131,22 @@ Salidas:
 - `outputs/final_demand_consumption_dataset.csv`
 - `outputs/final_renewable_generation_dataset.csv`
 
+### `scripts/build_open_meteo_augmented_dataset.py`
+
+Funcion:
+- detecta municipios ISTAC sin meteorologia observada
+- usa coordenadas municipales estables para consultar o reconstruir Open-Meteo
+- genera meteorologia diaria para municipios faltantes
+- combina estaciones reales + Open-Meteo con prioridad para estaciones reales
+- construye los datasets finales ampliados de consumo y renovables
+- copia los datasets ampliados como oficiales en `tfc-model/data`
+
+Salidas:
+- `outputs/weather_daily_municipal_open_meteo_missing.csv`
+- `outputs/weather_daily_municipal_augmented_full.csv`
+- `outputs/final_demand_consumption_dataset_augmented_open_meteo.csv`
+- `outputs/final_renewable_generation_dataset_augmented_open_meteo.csv`
+
 ---
 
 ## 4. Datasets intermedios y finales
@@ -132,10 +158,15 @@ Salidas:
 
 #### `outputs/weather_daily_municipal_clean.csv`
 - meteorologia diaria municipal limpia
+- corresponde a estaciones reales
 
 #### `outputs/demand_weather_daily_municipal.csv`
 - union intermedia de demanda y meteorologia
 - aun contiene filas sin cobertura meteorologica
+
+#### `outputs/weather_daily_municipal_augmented_full.csv`
+- meteorologia diaria municipal ampliada
+- combina estaciones reales y Open-Meteo para municipios faltantes
 
 #### `outputs/ree_renewables_canarias_daily_wide.csv`
 - generacion renovable diaria en formato ancho
@@ -144,12 +175,13 @@ Salidas:
 
 ### Finales
 
-#### `outputs/final_demand_consumption_dataset.csv`
-- dataset final para el modelo de demanda
-- solo incluye filas con al menos un dato meteorologico
+#### `outputs/final_demand_consumption_dataset_augmented_open_meteo.csv`
+- dataset final ampliado para el modelo de demanda
+- cubre 87/87 municipios ISTAC
+- incluye `weather_data_source` para distinguir estacion real frente a Open-Meteo
 
-#### `outputs/final_renewable_generation_dataset.csv`
-- dataset final para el modelo de renovables
+#### `outputs/final_renewable_generation_dataset_augmented_open_meteo.csv`
+- dataset final ampliado para el modelo eolico
 - incluye generacion REE y meteorologia agregada diaria de Canarias
 
 ---
@@ -241,13 +273,14 @@ Unidad:
 
 ### Demanda
 
-El dataset final de demanda:
+El dataset final de demanda oficial:
 - parte del dataset combinado intermedio
-- elimina cualquier fila donde todos los campos climaticos estan vacios
+- mantiene estaciones reales como fuente prioritaria
+- rellena los municipios ISTAC sin meteorologia observada con Open-Meteo historico
 
 Resultado actual:
-- **68.722 registros**
-- **39 municipios**
+- **165.106 registros**
+- **87 municipios**
 - periodo: `2020-01-01` a `2025-06-30`
 
 ### Renovables
@@ -261,6 +294,7 @@ El dataset final de renovables:
 
 Resultado actual:
 - **2.008 registros**
+- cobertura meteorologica diaria ampliada: 69 a 87 municipios segun disponibilidad por fecha
 - periodo: `2020-01-01` a `2025-06-30`
 
 ---
@@ -270,5 +304,6 @@ Resultado actual:
 - `docs/RENEWABLE_DATASET_VARIABLES.md`
 - `docs/CONSUMPTION_DATASET_VARIABLES.md`
 - `docs/WEATHER_DATASET_VARIABLES.md`
+- `docs/OPEN_METEO_AUGMENTATION.md`
 
-Estos archivos explican con mas detalle las variables de renovables, consumo y clima, y la relacion entre ellas.
+Estos archivos explican con mas detalle las variables de renovables, consumo, clima, ampliacion Open-Meteo y la relacion entre ellas.

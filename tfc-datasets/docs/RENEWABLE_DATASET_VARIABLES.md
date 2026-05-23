@@ -1,7 +1,8 @@
 # Variables del dataset de energias renovables
 
 Archivo principal:
-- `outputs/final_renewable_generation_dataset.csv`
+- `outputs/final_renewable_generation_dataset_augmented_open_meteo.csv`
+- copia oficial para modelos: `tfc-model/data/final_renewable_generation_dataset.csv`
 
 ## 1. Estructura general
 
@@ -75,6 +76,8 @@ Estas variables vienen de REE y aparecen en pares:
 
 Estas variables no son municipales. Son una **agregacion diaria para Canarias** construida a partir de la meteorologia limpia disponible.
 
+La version oficial actual usa meteorologia agregada ampliada: estaciones reales con prioridad y Open-Meteo para municipios sin cobertura observada. En consumo la cobertura es 87/87 municipios ISTAC; en renovables la agregacion puede alcanzar 88 puntos municipales porque incluye `Frontera` como punto meteorologico observado aunque no este en el dataset ISTAC de consumo.
+
 ### Cobertura meteorologica
 
 ### `canarias_weather_municipality_count`
@@ -142,6 +145,7 @@ Estas variables no son municipales. Son una **agregacion diaria para Canarias** 
 
 ### `weather_data_source`
 - Texto de apoyo sobre el origen de la meteorologia del dataset final.
+- En el dataset ampliado indica que la agregacion combina estaciones observadas y Open-Meteo cuando corresponde.
 
 ---
 

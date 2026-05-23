@@ -3,6 +3,9 @@
 Archivo principal:
 - `outputs/weather_daily_municipal_clean.csv`
 
+Archivo ampliado actual:
+- `outputs/weather_daily_municipal_augmented_full.csv`
+
 ## 1. Estructura general
 
 El dataset esta organizado por **municipio y dia**. Cada fila representa la meteorologia diaria agregada de un municipio.
@@ -28,13 +31,18 @@ Las variables se dividen en 3 bloques:
 
 ## 3. Variables meteorologicas
 
-Estas variables proceden del procesamiento de observaciones meteorologicas y se agregan por municipio y dia.
+Estas variables proceden del procesamiento de observaciones meteorologicas y se agregan por municipio y dia. En la version ampliada, los municipios sin observacion se rellenan con Open-Meteo historico.
 
 ### Cobertura
 
 ### `weather_station_count`
 - Numero de estaciones que aportaron datos utiles al municipio en ese dia.
 - Es importante para medir solidez y cobertura del dato agregado.
+
+### `weather_data_source`
+- Origen de la fila meteorologica.
+- `observed_station`: dato de estaciones reales.
+- `open_meteo_historical_missing_municipality`: dato Open-Meteo para municipio sin cobertura observada.
 
 ### Temperatura
 

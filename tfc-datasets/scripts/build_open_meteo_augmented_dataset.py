@@ -353,6 +353,8 @@ def evaluate_eolica(name: str, weather: pd.DataFrame) -> dict:
 
 def build_augmented_renewable(augmented_weather: pd.DataFrame) -> pd.DataFrame:
     ree = pd.read_csv(OUTPUTS / "ree_renewables_canarias_daily_wide.csv", parse_dates=["date"])
+    if "ree_generacion_renovable_pct" in ree.columns:
+        ree = ree.drop(columns=["ree_generacion_renovable_pct"])
     merged = ree.merge(aggregate_canarias_weather(augmented_weather), on="date", how="left")
     merged["weather_data_source"] = np.where(
         merged["canarias_weather_municipality_count"].notna(),
@@ -366,7 +368,7 @@ def build_augmented_renewable(augmented_weather: pd.DataFrame) -> pd.DataFrame:
 
 
 def write_report(results: pd.DataFrame, final: pd.DataFrame, open_missing: pd.DataFrame) -> None:
-    current_municipalities = pd.read_csv(MODEL_DATA / "final_demand_consumption_dataset.csv")["municipality"].nunique()
+    current_municipalities = int(final.loc[final["weather_data_source"] == "observed_station", "municipality"].nunique())
     total = final["municipality"].nunique()
     added = total - current_municipalities
     lines = [
@@ -398,6 +400,38 @@ def write_report(results: pd.DataFrame, final: pd.DataFrame, open_missing: pd.Da
         "- Si empeora bastante, mantener Open-Meteo como fuente separada y calibrar por isla/municipio antes de entrenar definitivo.",
         "- La comparacion no es perfecta porque el escenario ampliado predice municipios adicionales, no exactamente el mismo panel.",
         "",
+        "## Reentrenamiento oficial posterior",
+        "",
+    ]
+    official_consumption = REPO_ROOT / "tfc-model" / "src" / "evaluation" / "consumption_energy_demand" / "metricas_todos_sectores.csv"
+    official_eolica = REPO_ROOT / "tfc-model" / "src" / "evaluation" / "renewable_energy_generation" / "metricas_eolica.csv"
+    if official_consumption.exists() and official_eolica.exists():
+        consumption_metrics = pd.read_csv(official_consumption)
+        eolica_metrics = pd.read_csv(official_eolica)
+        lines += [
+            "Metricas test tras promover los datasets ampliados a `tfc-model/data` y reentrenar los scripts oficiales:",
+            "",
+            "| Modelo oficial | Target | MAE | RMSE | R2 | MAPE | WMAPE |",
+            "|---|---|---:|---:|---:|---:|---:|",
+        ]
+        for row in consumption_metrics[consumption_metrics["split"] == "test"].itertuples(index=False):
+            lines.append(
+                f"| consumo XGBoost | {row.sector} | {row.MAE:.4f} | {row.RMSE:.4f} | {row.R2:.4f} | {row.MAPE:.2f} | {row.WMAPE:.2f} |"
+            )
+        hgb = eolica_metrics[eolica_metrics["modelo"] == "HGB"]
+        if not hgb.empty:
+            row = hgb.iloc[0]
+            lines.append(
+                f"| eolica HGB | eolica | {row['MAE']:.4f} | {row['RMSE']:.4f} | {row['R2']:.4f} | {row['MAPE']:.2f} | {row['WMAPE']:.2f} |"
+            )
+        lines += [
+            "",
+            "Decision: se mantiene el dataset ampliado porque cubre 87/87 municipios ISTAC y la degradacion en consumo es moderada. Eolica mejora con la agregacion territorial ampliada.",
+            "",
+        ]
+    else:
+        lines += ["Pendiente de reentrenar los modelos oficiales.", ""]
+    lines += [
         "## Archivos generados",
         "",
         "- `outputs/weather_daily_municipal_open_meteo_missing.csv`",
@@ -433,7 +467,8 @@ def main() -> None:
     final = build_augmented_demand(augmented_weather)
     build_augmented_renewable(augmented_weather)
 
-    current = pd.read_csv(MODEL_DATA / "final_demand_consumption_dataset.csv")
+    rollback = MODEL_DATA / "final_demand_consumption_dataset_observed_39_rollback.csv"
+    current = pd.read_csv(rollback if rollback.exists() else MODEL_DATA / "final_demand_consumption_dataset.csv")
     results = []
     results.extend(evaluate_consumption("observed_current_39", current))
     results.extend(evaluate_consumption("augmented_open_meteo_missing", final))

@@ -1,11 +1,14 @@
 # Variables del dataset de consumo electrico
 
 Archivo principal:
-- `outputs/final_demand_consumption_dataset.csv`
+- `outputs/final_demand_consumption_dataset_augmented_open_meteo.csv`
+- copia oficial para modelos: `tfc-model/data/final_demand_consumption_dataset.csv`
 
 ## 1. Estructura general
 
-El dataset esta organizado por **municipio y dia**. Cada fila representa un municipio de Canarias en una fecha concreta.
+El dataset esta organizado por **municipio y dia**. Cada fila representa un municipio ISTAC de Canarias en una fecha concreta.
+
+Cobertura actual: **87/87 municipios ISTAC**. La meteorologia observada mantiene prioridad y Open-Meteo rellena los municipios sin cobertura de estacion.
 
 Las variables se dividen en 4 bloques:
 - identificacion territorial
@@ -58,6 +61,11 @@ Estas variables vienen del procesamiento meteorologico diario y se unen a nivel 
 ### `weather_station_count`
 - Numero de estaciones meteorologicas que aportaron datos utiles para ese municipio y ese dia.
 - Sirve como indicador de cobertura y apoyo observacional.
+
+### `weather_data_source`
+- Origen de la meteorologia de la fila.
+- Valores esperados: `observed_station` u `open_meteo_historical_missing_municipality`.
+- Permite auditar si una prediccion historica viene de estacion real o de relleno Open-Meteo.
 
 ### Temperatura
 
