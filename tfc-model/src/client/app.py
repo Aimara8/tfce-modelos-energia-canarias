@@ -89,7 +89,7 @@ def api_post(path: str, payload: dict) -> dict:
 
 @st.cache_data(ttl=30)
 def load_metadata(base_url: str) -> dict:
-    r = requests.get(f"{base_url}/api/metadata", timeout=15)
+    r = requests.get(f"{base_url}/metadata", timeout=15)
     r.raise_for_status()
     return r.json()
 
@@ -362,7 +362,7 @@ with st.sidebar:
     api_url = st.text_input("url", value=API_URL, label_visibility="collapsed")
     try:
         metadata = load_metadata(api_url)
-        health   = api_get("/api/health")
+        health   = api_get("/health")
         st.success("API activa")
         for m in health.get("modelos_cargados", []):
             st.markdown(f'<span class="badge">{m}</span>', unsafe_allow_html=True)
@@ -378,52 +378,55 @@ if page == "📊 Histórico consumo":
     st.markdown('<span class="page-title">📊 Histórico de consumo</span>', unsafe_allow_html=True)
     st.markdown('<div class="page-subtitle">Análisis histórico de demanda eléctrica por municipio</div>', unsafe_allow_html=True)
 
-    consumo_dash = api_get("/api/dashboard/consumo")
-    k = consumo_dash.get("kpis", {})
+    try:
+        consumo_dash = api_get("/dashboard/consumo")
+        k = consumo_dash.get("kpis", {})
 
-    # intentar obtener consumo medio diario desde la API; si no existe, aproximar desde monthly_total
-    avg_daily = k.get("avg_daily_consumption")
-    if avg_daily is None and consumo_dash.get("monthly_total"):
-        try:
-            _mdf = pd.DataFrame(consumo_dash["monthly_total"])
-            if "mwh" in _mdf.columns and not _mdf["mwh"].empty:
-                avg_daily = float(_mdf["mwh"].mean()) / 30.0  # aproximación diaria
-        except Exception:
-            avg_daily = None
+        # intentar obtener consumo medio diario desde la API; si no existe, aproximar desde monthly_total
+        avg_daily = k.get("avg_daily_consumption")
+        if avg_daily is None and consumo_dash.get("monthly_total"):
+            try:
+                _mdf = pd.DataFrame(consumo_dash["monthly_total"])
+                if "mwh" in _mdf.columns and not _mdf["mwh"].empty:
+                    avg_daily = float(_mdf["mwh"].mean()) / 30.0  # aproximación diaria
+            except Exception:
+                avg_daily = None
 
-    # KPIs contextuales de esta sección
-    c1, c2, c3, c4 = st.columns(4)
-    c1.metric("Municipios modelados", f"{k.get('municipalities')}/{TOTAL_CANARY_MUNICIPALITIES}")
-    c2.metric("Consumo medio diario", mwh(avg_daily))
-    c3.metric("Último día disponible", k.get("date_max"))
-    c4.metric("Demanda último día", mwh(k.get("latest_total_mwh")))
+        # KPIs contextuales de esta sección
+        c1, c2, c3, c4 = st.columns(4)
+        c1.metric("Municipios modelados", f"{k.get('municipalities')}/{TOTAL_CANARY_MUNICIPALITIES}")
+        c2.metric("Consumo medio diario", mwh(avg_daily))
+        c3.metric("Último día disponible", k.get("date_max"))
+        c4.metric("Demanda último día", mwh(k.get("latest_total_mwh")))
 
-    st.markdown("---")
-    m1, m2 = st.columns([1.35, 1])
-    with m1:
-        st.markdown('<div class="slabel">Distribución geográfica</div>', unsafe_allow_html=True)
-        leaflet_map(metadata["consumption"]["municipalities"], height=390)
-    with m2:
-        st.markdown('<div class="slabel">Mix de consumo · último día</div>', unsafe_allow_html=True)
-        st.plotly_chart(donut_chart(consumo_dash["sector_totals"], "sector", "mwh"), use_container_width=True)
+        st.markdown("---")
+        m1, m2 = st.columns([1.35, 1])
+        with m1:
+            st.markdown('<div class="slabel">Distribución geográfica</div>', unsafe_allow_html=True)
+            leaflet_map(metadata["consumption"]["municipalities"], height=390)
+        with m2:
+            st.markdown('<div class="slabel">Mix de consumo · último día</div>', unsafe_allow_html=True)
+            st.plotly_chart(donut_chart(consumo_dash["sector_totals"], "sector", "mwh"), use_container_width=True)
 
-    st.markdown("---")
-    g1, g2 = st.columns(2)
-    with g1:
-        st.markdown('<div class="slabel">Demanda total mensual</div>', unsafe_allow_html=True)
-        monthly_df = pd.DataFrame(consumo_dash["monthly_total"])
-        st.plotly_chart(area_chart(monthly_df, "month", "mwh", COLORS["consumption"]), use_container_width=True)
-    with g2:
-        st.markdown('<div class="slabel">Top municipios · último día</div>', unsafe_allow_html=True)
-        top_df = pd.DataFrame(consumo_dash["top_municipalities"])
-        fig_top = px.bar(top_df, x="mwh", y="municipality", orientation="h",
-                         color_discrete_sequence=[COLORS["accent"]])
-        st.plotly_chart(_apply(fig_top, {"height": 280}), use_container_width=True)
+        st.markdown("---")
+        g1, g2 = st.columns(2)
+        with g1:
+            st.markdown('<div class="slabel">Demanda total mensual</div>', unsafe_allow_html=True)
+            monthly_df = pd.DataFrame(consumo_dash["monthly_total"])
+            st.plotly_chart(area_chart(monthly_df, "month", "mwh", COLORS["consumption"]), use_container_width=True)
+        with g2:
+            st.markdown('<div class="slabel">Top municipios · último día</div>', unsafe_allow_html=True)
+            top_df = pd.DataFrame(consumo_dash["top_municipalities"])
+            fig_top = px.bar(top_df, x="mwh", y="municipality", orientation="h",
+                             color_discrete_sequence=[COLORS["accent"]])
+            st.plotly_chart(_apply(fig_top, {"height": 280}), use_container_width=True)
+    except Exception as exc:
+        st.error(f"Error cargando histórico de consumo: {exc}")
 
 
 # ═════════════════════════════════════════════════════════════════
 # PAGE: Predicción consumo
-# ═════════════════════════════════���═══════════════════════════════
+# ═════════════════════════════════════════════════════════════════
 elif page == "🔮 Predicción consumo":
     st.markdown('<span class="page-title">🔮 Predicción de consumo</span>', unsafe_allow_html=True)
     st.markdown('<div class="page-subtitle">Estimación de demanda eléctrica diaria por municipio y sector</div>', unsafe_allow_html=True)
@@ -455,7 +458,7 @@ elif page == "🔮 Predicción consumo":
             payload = {"municipality": municipality, "fecha": str(fecha)}
             if weather:
                 payload["weather"] = weather
-            result = api_post("/api/predict/consumption", payload)
+            result = api_post("/predict/consumo", payload)
             if result["warnings"]:
                 st.warning("⚠️ " + " ".join(result["warnings"]))
 
@@ -492,59 +495,62 @@ elif page == "📈 Histórico generación":
     st.markdown('<span class="page-title">📈 Histórico de generación</span>', unsafe_allow_html=True)
     st.markdown('<div class="page-subtitle">Evolución de la generación eólica y renovable en las Islas Canarias</div>', unsafe_allow_html=True)
 
-    eolica_dash = api_get("/api/dashboard/eolica")
-    k = eolica_dash.get("kpis", {})
-    best = next((r for r in eolica_dash["metrics"] if r.get("modelo") == "HGB"), {})
+    try:
+        eolica_dash = api_get("/dashboard/eolica")
+        k = eolica_dash.get("kpis", {})
+        best = next((r for r in eolica_dash["metrics"] if r.get("modelo") == "HGB"), {})
 
-    # intentar calcular % cobertura eólica sobre el total (si viene latest_mix)
-    coverage_pct = k.get("renewable_coverage_pct")
-    if coverage_pct is None and eolica_dash.get("latest_mix"):
-        try:
-            _mix = pd.DataFrame(eolica_dash["latest_mix"])
-            if {"technology", "mwh"}.issubset(_mix.columns):
-                total = _mix["mwh"].sum() if not _mix["mwh"].empty else 0.0
-                eolica_sum = _mix.loc[_mix["technology"].str.lower().str.contains("eol", na=False), "mwh"].sum()
-                coverage_pct = (eolica_sum / total * 100.0) if total > 0 else None
-        except Exception:
-            coverage_pct = None
+        # intentar calcular % cobertura eólica sobre el total (si viene latest_mix)
+        coverage_pct = k.get("renewable_coverage_pct")
+        if coverage_pct is None and eolica_dash.get("latest_mix"):
+            try:
+                _mix = pd.DataFrame(eolica_dash["latest_mix"])
+                if {"technology", "mwh"}.issubset(_mix.columns):
+                    total = _mix["mwh"].sum() if not _mix["mwh"].empty else 0.0
+                    eolica_sum = _mix.loc[_mix["technology"].str.lower().str.contains("eol", na=False), "mwh"].sum()
+                    coverage_pct = (eolica_sum / total * 100.0) if total > 0 else None
+            except Exception:
+                coverage_pct = None
 
-    # KPIs contextuales de esta sección
-    e1, e2, e3, e4 = st.columns(4)
-    e1.metric("Eólica último día", mwh(k.get("latest_eolica_mwh")))
-    e2.metric("Viento medio", f"{k.get('latest_wind_ms', 0.0):.2f} m/s")
-    e3.metric("% cobertura renovable", pct(coverage_pct))
-    e4.metric("Precisión modelo (WMAPE)", pct(best.get("WMAPE")))
+        # KPIs contextuales de esta sección
+        e1, e2, e3, e4 = st.columns(4)
+        e1.metric("Eólica último día", mwh(k.get("latest_eolica_mwh")))
+        e2.metric("Viento medio", f"{k.get('latest_wind_ms', 0.0):.2f} m/s")
+        e3.metric("% cobertura renovable", pct(coverage_pct))
+        e4.metric("Precisión modelo (WMAPE)", pct(best.get("WMAPE")))
 
-    st.markdown("---")
-    g1, g2 = st.columns(2)
-    with g1:
-        st.markdown('<div class="slabel">Mix renovable · último día</div>', unsafe_allow_html=True)
-        st.plotly_chart(donut_chart(eolica_dash["latest_mix"], "technology", "mwh"), use_container_width=True)
-    with g2:
-        monthly = pd.DataFrame(eolica_dash["monthly"])
-        fig_gen = go.Figure()
-        fig_gen.add_trace(go.Scatter(x=monthly["month"], y=monthly["eolica_mwh"],
-                                      mode="lines+markers", name="Eólica",
-                                      line=dict(color=COLORS["wind_dark"], width=2.5)))
-        fig_gen.add_trace(go.Scatter(x=monthly["month"], y=monthly["solar_mwh"],
-                                      mode="lines+markers", name="Solar",
-                                      line=dict(color=COLORS["wind"], width=2.5, dash="dot")))
-        st.markdown('<div class="slabel">Generación media mensual</div>', unsafe_allow_html=True)
-        st.plotly_chart(_apply(fig_gen, {"height": 310,
-            "legend": dict(orientation="h", font=dict(color="#8b949e"))}), use_container_width=True)
+        st.markdown("---")
+        g1, g2 = st.columns(2)
+        with g1:
+            st.markdown('<div class="slabel">Mix renovable · último día</div>', unsafe_allow_html=True)
+            st.plotly_chart(donut_chart(eolica_dash["latest_mix"], "technology", "mwh"), use_container_width=True)
+        with g2:
+            monthly = pd.DataFrame(eolica_dash["monthly"])
+            fig_gen = go.Figure()
+            fig_gen.add_trace(go.Scatter(x=monthly["month"], y=monthly["eolica_mwh"],
+                                          mode="lines+markers", name="Eólica",
+                                          line=dict(color=COLORS["wind_dark"], width=2.5)))
+            fig_gen.add_trace(go.Scatter(x=monthly["month"], y=monthly["solar_mwh"],
+                                          mode="lines+markers", name="Solar",
+                                          line=dict(color=COLORS["wind"], width=2.5, dash="dot")))
+            st.markdown('<div class="slabel">Generación media mensual</div>', unsafe_allow_html=True)
+            st.plotly_chart(_apply(fig_gen, {"height": 310,
+                "legend": dict(orientation="h", font=dict(color="#8b949e"))}), use_container_width=True)
 
-    st.markdown("---")
-    g3, g4 = st.columns(2)
-    with g3:
-        err_df = pd.DataFrame(eolica_dash["monthly_errors"])
-        fig_err = px.bar(err_df, x="month", y="wmape", color_discrete_sequence=[COLORS["danger"]])
-        st.markdown('<div class="slabel">Error WMAPE mensual</div>', unsafe_allow_html=True)
-        st.plotly_chart(_apply(fig_err, {"height": 270}), use_container_width=True)
-    with g4:
-        fig_wind = px.line(monthly, x="month", y="wind_ms", markers=True,
-                            color_discrete_sequence=[COLORS["accent"]])
-        st.markdown('<div class="slabel">Viento medio mensual</div>', unsafe_allow_html=True)
-        st.plotly_chart(_apply(fig_wind, {"height": 270}), use_container_width=True)
+        st.markdown("---")
+        g3, g4 = st.columns(2)
+        with g3:
+            err_df = pd.DataFrame(eolica_dash["monthly_errors"])
+            fig_err = px.bar(err_df, x="month", y="wmape", color_discrete_sequence=[COLORS["danger"]])
+            st.markdown('<div class="slabel">Error WMAPE mensual</div>', unsafe_allow_html=True)
+            st.plotly_chart(_apply(fig_err, {"height": 270}), use_container_width=True)
+        with g4:
+            fig_wind = px.line(monthly, x="month", y="wind_ms", markers=True,
+                                color_discrete_sequence=[COLORS["accent"]])
+            st.markdown('<div class="slabel">Viento medio mensual</div>', unsafe_allow_html=True)
+            st.plotly_chart(_apply(fig_wind, {"height": 270}), use_container_width=True)
+    except Exception as exc:
+        st.error(f"Error cargando histórico de generación: {exc}")
 
 
 # ═════════════════════════════════════════════════════════════════
@@ -586,7 +592,7 @@ else:
             }
             if weather_e:
                 payload_e["weather"] = weather_e
-            result_e = api_post("/api/predict/eolica", payload_e)
+            result_e = api_post("/predict/eolica", payload_e)
             if result_e["warnings"]:
                 st.warning("⚠️ " + " ".join(result_e["warnings"]))
 
