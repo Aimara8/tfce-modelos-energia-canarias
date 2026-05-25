@@ -8,7 +8,7 @@ import streamlit as st
 import streamlit.components.v1 as components
 from pathlib import Path
 
-API_URL = "http://localhost:8000"
+API_URL = "https://tfce-modelos-energia-canarias.onrender.com:8000"
 
 COLORS = {
     "consumption": "#10b981",
