@@ -65,7 +65,7 @@ st.set_page_config(
     initial_sidebar_state="expanded",
 )
 
-# ─── helpers ────────────────────────────────────────────────────────────[...]
+# ─── helpers ────────────────────────────────────────────────────────────
 def mwh(value: float | None) -> str:
     if value is None:
         return "sin dato"
@@ -93,7 +93,7 @@ def load_metadata(base_url: str) -> dict:
     r.raise_for_status()
     return r.json()
 
-# ─── Leaflet map ──────────────────────────────────────────────────────────[...]
+# ─── Leaflet map ───────────────────────────────────────────────────────────
 def leaflet_map(municipalities: list[str], selected: str | None = None, height: int = 400) -> None:
     markers_js = []
     for name in municipalities:
@@ -144,7 +144,7 @@ def leaflet_map(municipalities: list[str], selected: str | None = None, height: 
     </script></body></html>"""
     components.html(html, height=height + 2, scrolling=False)
 
-# ─── chart helpers ──────────────────────────────────────────────────────────[...]
+# ─── chart helpers ──────────────────────────────────────────────────────────
 CHART_BASE = dict(
     paper_bgcolor="rgba(0,0,0,0)",
     plot_bgcolor="rgba(0,0,0,0)",
@@ -205,7 +205,7 @@ def area_chart(df: pd.DataFrame, x: str, y: str, color: str) -> go.Figure:
     fig.update_traces(fill="tozeroy", line_width=2)
     return _apply(fig, {"height": 280, "yaxis_title": "MWh", "xaxis_title": ""})
 
-# ─── weather form ──────────────────────────────────────────────────────────[...]
+# ─── weather form ──────────────────────────────────────────────────────────
 def weather_form(prefix: str, wind_default: float) -> dict:
     st.caption("Meteorología diaria agregada")
     c1, c2, c3 = st.columns(3)
@@ -244,7 +244,7 @@ def weather_form(prefix: str, wind_default: float) -> dict:
         "weather_station_count": int(stations),
     }
 
-# ─── CSS ─────────────────────────────────────────────────────────────[...]
+# ─── CSS ─────────────────────────────────────────────────────────────
 st.markdown("""
 <style>
 @import url('https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600&display=swap');
@@ -347,7 +347,7 @@ details summary { color: #8b949e !important; }
 """, unsafe_allow_html=True)
 
 
-# ─── sidebar ──────────────────────────────────────────────────────────[...]
+# ─── sidebar ──────────────────────────────────────────────────────────[[...]
 with st.sidebar:
     st.markdown("**⚡ Demo TFC**")
     st.markdown('<div class="slabel" style="margin-top:.5rem">Secciones</div>', unsafe_allow_html=True)
@@ -371,9 +371,9 @@ with st.sidebar:
         st.stop()
 
 
-# ══════════════════════════════════════════════════════════════════[...]
+# ═════════════════════════════════════════════════════════════════
 # PAGE: Histórico consumo
-# ══════════════════════════════════════════════════════════════════[...]
+# ═════════════════════════════════════════════════════════════════
 if page == "📊 Histórico consumo":
     st.markdown('<span class="page-title">📊 Histórico de consumo</span>', unsafe_allow_html=True)
     st.markdown('<div class="page-subtitle">Análisis histórico de demanda eléctrica por municipio</div>', unsafe_allow_html=True)
@@ -421,9 +421,9 @@ if page == "📊 Histórico consumo":
         st.plotly_chart(_apply(fig_top, {"height": 280}), use_container_width=True)
 
 
-# ══════════════════════════════════════════════════════════════════[...]
+# ═════════════════════════════════════════════════════════════════
 # PAGE: Predicción consumo
-# ══════════════════════════════════════════════════════════════════[...]
+# ═════════════════════════════════���═══════════════════════════════
 elif page == "🔮 Predicción consumo":
     st.markdown('<span class="page-title">🔮 Predicción de consumo</span>', unsafe_allow_html=True)
     st.markdown('<div class="page-subtitle">Estimación de demanda eléctrica diaria por municipio y sector</div>', unsafe_allow_html=True)
@@ -433,7 +433,10 @@ elif page == "🔮 Predicción consumo":
     with cfg_col:
         st.markdown('<div class="slabel">Escenario</div>', unsafe_allow_html=True)
         municipality = st.selectbox("Municipio", metadata["consumption"]["municipalities"])
-        default_date = pd.to_datetime(metadata["consumption"]["date_max"]).date()
+        try:
+            default_date = pd.to_datetime(metadata.get("consumption", {}).get("date_max", pd.Timestamp.now())).date()
+        except (KeyError, TypeError, ValueError):
+            default_date = pd.Timestamp.now().date()
         fecha = st.date_input("Fecha de predicción", value=default_date, key="fecha_consumo")
         use_hist = st.checkbox("Meteorología automática", value=True, key="consumo_hist_weather")
         st.info("Usa histórico local si existe. Para fechas futuras intenta Open-Meteo.")
@@ -482,9 +485,9 @@ elif page == "🔮 Predicción consumo":
             st.error(f"Error: {exc}")
 
 
-# ══════════════════════════════════════════════════════════════════[...]
+# ═════════════════════════════════════════════════════════════════
 # PAGE: Histórico generación
-# ══════════════════════════════════════════════════════════════════[...]
+# ═════════════════════════════════════════════════════════════════
 elif page == "📈 Histórico generación":
     st.markdown('<span class="page-title">📈 Histórico de generación</span>', unsafe_allow_html=True)
     st.markdown('<div class="page-subtitle">Evolución de la generación eólica y renovable en las Islas Canarias</div>', unsafe_allow_html=True)
@@ -544,9 +547,9 @@ elif page == "📈 Histórico generación":
         st.plotly_chart(_apply(fig_wind, {"height": 270}), use_container_width=True)
 
 
-# ══════════════════════════════════════════════════════════════════[...]
+# ═════════════════════════════════════════════════════════════════
 # PAGE: Predicción eólica
-# ══════════════════════════════════════════════════════════════════[...]
+# ═════════════════════════════════════════════════════════════════
 else:
     st.markdown('<span class="page-title">🌬️ Predicción eólica</span>', unsafe_allow_html=True)
     st.markdown('<div class="page-subtitle">Estimación de generación eólica con intervalo de incertidumbre</div>', unsafe_allow_html=True)
@@ -555,7 +558,10 @@ else:
     cfg_col, map_col = st.columns([1, 1.4])
     with cfg_col:
         st.markdown('<div class="slabel">Escenario</div>', unsafe_allow_html=True)
-        default_wind_date = pd.to_datetime(metadata["renewable"]["date_max"]).date()
+        try:
+            default_wind_date = pd.to_datetime(metadata.get("renewable", {}).get("date_max", pd.Timestamp.now())).date()
+        except (KeyError, TypeError, ValueError):
+            default_wind_date = pd.Timestamp.now().date()
         fecha_eolica  = st.date_input("Fecha", value=default_wind_date, key="fecha_eolica")
         mun_count     = st.number_input("Municipios con meteorología", value=87, min_value=1, step=1)
         station_count = st.number_input("Estaciones agregadas",        value=50, min_value=1, step=1)
