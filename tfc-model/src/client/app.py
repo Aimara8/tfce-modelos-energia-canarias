@@ -89,7 +89,7 @@ def api_post(path: str, payload: dict) -> dict:
 
 @st.cache_data(ttl=30)
 def load_metadata(base_url: str) -> dict:
-    r = requests.get(f"{base_url}/metadata", timeout=15)
+    r = requests.get(f"{base_url}/api/metadata", timeout=15)
     r.raise_for_status()
     return r.json()
 
@@ -253,7 +253,16 @@ html, body, [class*="css"] { font-family: 'DM Sans', sans-serif !important; }
 
 .stApp { background: #080f1e; }
 
-.block-container { padding: 1.5rem 2rem 2rem 2rem !important; max-width: 1400px; }
+/* ── hide header ── */
+header { display: none !important; }
+.stAppHeader { display: none !important; }
+[data-testid="stHeader"] { display: none !important; }
+
+.block-container { 
+  padding: 0.8rem 2rem 2rem 2rem !important; 
+  max-width: 1400px; 
+  margin-top: -1.5rem !important;
+}
 
 /* ── sidebar: clean dark, no color fights ── */
 section[data-testid="stSidebar"] {
@@ -297,8 +306,21 @@ div[data-testid="stMetric"] [data-testid="stMetricValue"] {
 div[data-testid="stMetricDelta"] { color: #3fb950 !important; }
 
 /* ── page title ── */
-.page-title { font-size: 1.6rem; font-weight: 600; color: #e6edf3; letter-spacing: -.02em; }
-.page-subtitle { font-size: 0.85rem; color: #484f58; margin: .15rem 0 1.4rem 0; }
+.page-title { 
+  font-size: 1.6rem; 
+  font-weight: 600; 
+  color: #e6edf3; 
+  letter-spacing: -.02em; 
+  margin-top: 0rem !important;
+  margin-bottom: 0.3rem !important;
+  padding-top: 0 !important;
+}
+.page-subtitle { 
+  font-size: 0.85rem; 
+  color: #484f58; 
+  margin: 0rem 0 1.2rem 0 !important; 
+  padding-top: 0 !important;
+}
 
 /* ── section label ── */
 .slabel {
@@ -371,9 +393,9 @@ with st.sidebar:
         st.stop()
 
 
-# ═════════════════════════════════════════════════════════════════
+# ════════════════════════════════════════════════════════════════
 # PAGE: Histórico consumo
-# ═════════════════════════════════════════════════════════════════
+# ════════════════════════════════════════════════════════════════
 if page == "📊 Histórico consumo":
     st.markdown('<span class="page-title">📊 Histórico de consumo</span>', unsafe_allow_html=True)
     st.markdown('<div class="page-subtitle">Análisis histórico de demanda eléctrica por municipio</div>', unsafe_allow_html=True)
@@ -424,9 +446,9 @@ if page == "📊 Histórico consumo":
         st.error(f"Error cargando histórico de consumo: {exc}")
 
 
-# ═════════════════════════════════════════════════════════════════
+# ════════════════════════════════════════════════════════════════
 # PAGE: Predicción consumo
-# ═════════════════════════════════════════════════════════════════
+# ════════════════════════════════════════════════════════════════
 elif page == "🔮 Predicción consumo":
     st.markdown('<span class="page-title">🔮 Predicción de consumo</span>', unsafe_allow_html=True)
     st.markdown('<div class="page-subtitle">Estimación de demanda eléctrica diaria por municipio y sector</div>', unsafe_allow_html=True)
@@ -488,9 +510,9 @@ elif page == "🔮 Predicción consumo":
             st.error(f"Error: {exc}")
 
 
-# ═════════════════════════════════════════════════════════════════
+# ════════════════════════════════════════════════════════════════
 # PAGE: Histórico generación
-# ═════════════════════════════════════════════════════════════════
+# ════════════════════════════════════════════════════════════════
 elif page == "📈 Histórico generación":
     st.markdown('<span class="page-title">📈 Histórico de generación</span>', unsafe_allow_html=True)
     st.markdown('<div class="page-subtitle">Evolución de la generación eólica y renovable en las Islas Canarias</div>', unsafe_allow_html=True)
@@ -553,9 +575,9 @@ elif page == "📈 Histórico generación":
         st.error(f"Error cargando histórico de generación: {exc}")
 
 
-# ═════════════════════════════════════════════════════════════════
+# ════════════════════════════════════════════════════════════════
 # PAGE: Predicción eólica
-# ═════════════════════════════════════════════════════════════════
+# ════════════════════════════════════════════════════════════════
 else:
     st.markdown('<span class="page-title">🌬️ Predicción eólica</span>', unsafe_allow_html=True)
     st.markdown('<div class="page-subtitle">Estimación de generación eólica con intervalo de incertidumbre</div>', unsafe_allow_html=True)
