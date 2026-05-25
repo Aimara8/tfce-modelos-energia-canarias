@@ -1,7 +1,6 @@
 # Raw and generated datasets should stay local or in external storage.
 tfc-datasets/inputs/**/*.csv
 tfc-datasets/outputs/*.csv
-tfc-model/data/*.csv
 
 # Common Python artifacts
 __pycache__/
