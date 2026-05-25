@@ -8,7 +8,7 @@ import streamlit as st
 import streamlit.components.v1 as components
 from pathlib import Path
 
-API_URL = "http://localhost:8000"
+API_URL = "https://tfce-modelos-energia-canarias.onrender.com"
 
 COLORS = {
     "consumption": "#10b981",
@@ -65,7 +65,7 @@ st.set_page_config(
     initial_sidebar_state="expanded",
 )
 
-# ─── helpers ────────────────────────────────────────────────────────────────────
+# ─── helpers ────────────────────────────────────────────────────────────[...]
 def mwh(value: float | None) -> str:
     if value is None:
         return "sin dato"
@@ -89,11 +89,11 @@ def api_post(path: str, payload: dict) -> dict:
 
 @st.cache_data(ttl=30)
 def load_metadata(base_url: str) -> dict:
-    r = requests.get(f"{base_url}/metadata", timeout=15)
+    r = requests.get(f"{base_url}/api/metadata", timeout=15)
     r.raise_for_status()
     return r.json()
 
-# ─── Leaflet map ────────────────────────────────────────────────────────────────
+# ─── Leaflet map ──────────────────────────────────────────────────────────[...]
 def leaflet_map(municipalities: list[str], selected: str | None = None, height: int = 400) -> None:
     markers_js = []
     for name in municipalities:
@@ -144,7 +144,7 @@ def leaflet_map(municipalities: list[str], selected: str | None = None, height: 
     </script></body></html>"""
     components.html(html, height=height + 2, scrolling=False)
 
-# ─── chart helpers ───────────────────────────────────────────────────────────────
+# ─── chart helpers ──────────────────────────────────────────────────────────[...]
 CHART_BASE = dict(
     paper_bgcolor="rgba(0,0,0,0)",
     plot_bgcolor="rgba(0,0,0,0)",
@@ -205,7 +205,7 @@ def area_chart(df: pd.DataFrame, x: str, y: str, color: str) -> go.Figure:
     fig.update_traces(fill="tozeroy", line_width=2)
     return _apply(fig, {"height": 280, "yaxis_title": "MWh", "xaxis_title": ""})
 
-# ─── weather form ────────────────────────────────────────────────────────────────
+# ─── weather form ──────────────────────────────────────────────────────────[...]
 def weather_form(prefix: str, wind_default: float) -> dict:
     st.caption("Meteorología diaria agregada")
     c1, c2, c3 = st.columns(3)
@@ -244,7 +244,7 @@ def weather_form(prefix: str, wind_default: float) -> dict:
         "weather_station_count": int(stations),
     }
 
-# ─── CSS ─────────────────────────────────────────────────────────────────────────
+# ─── CSS ─────────────────────────────────────────────────────────────[...]
 st.markdown("""
 <style>
 @import url('https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600&display=swap');
@@ -347,7 +347,7 @@ details summary { color: #8b949e !important; }
 """, unsafe_allow_html=True)
 
 
-# ─── sidebar ─────────────────────────────────────────────────────────────────────
+# ─── sidebar ──────────────────────────────────────────────────────────[...]
 with st.sidebar:
     st.markdown("**⚡ Demo TFC**")
     st.markdown('<div class="slabel" style="margin-top:.5rem">Secciones</div>', unsafe_allow_html=True)
@@ -362,7 +362,7 @@ with st.sidebar:
     api_url = st.text_input("url", value=API_URL, label_visibility="collapsed")
     try:
         metadata = load_metadata(api_url)
-        health   = api_get("/health")
+        health   = api_get("/api/health")
         st.success("API activa")
         for m in health.get("modelos_cargados", []):
             st.markdown(f'<span class="badge">{m}</span>', unsafe_allow_html=True)
@@ -371,14 +371,14 @@ with st.sidebar:
         st.stop()
 
 
-# ═══════════════════════════════════════════════════════════════════════════════
+# ══════════════════════════════════════════════════════════════════[...]
 # PAGE: Histórico consumo
-# ═══════════════════════════════════════════════════════════════════════════════
+# ══════════════════════════════════════════════════════════════════[...]
 if page == "📊 Histórico consumo":
     st.markdown('<span class="page-title">📊 Histórico de consumo</span>', unsafe_allow_html=True)
     st.markdown('<div class="page-subtitle">Análisis histórico de demanda eléctrica por municipio</div>', unsafe_allow_html=True)
 
-    consumo_dash = api_get("/dashboard/consumo")
+    consumo_dash = api_get("/api/dashboard/consumo")
     k = consumo_dash.get("kpis", {})
 
     # intentar obtener consumo medio diario desde la API; si no existe, aproximar desde monthly_total
@@ -421,9 +421,9 @@ if page == "📊 Histórico consumo":
         st.plotly_chart(_apply(fig_top, {"height": 280}), use_container_width=True)
 
 
-# ═══════════════════════════════════════════════════════════════════════════════
+# ══════════════════════════════════════════════════════════════════[...]
 # PAGE: Predicción consumo
-# ═══════════════════════════════════════════════════════════════════════════════
+# ══════════════════════════════════════════════════════════════════[...]
 elif page == "🔮 Predicción consumo":
     st.markdown('<span class="page-title">🔮 Predicción de consumo</span>', unsafe_allow_html=True)
     st.markdown('<div class="page-subtitle">Estimación de demanda eléctrica diaria por municipio y sector</div>', unsafe_allow_html=True)
@@ -452,7 +452,7 @@ elif page == "🔮 Predicción consumo":
             payload = {"municipality": municipality, "fecha": str(fecha)}
             if weather:
                 payload["weather"] = weather
-            result = api_post("/predict/consumo", payload)
+            result = api_post("/api/predict/consumption", payload)
             if result["warnings"]:
                 st.warning("⚠️ " + " ".join(result["warnings"]))
 
@@ -482,14 +482,14 @@ elif page == "🔮 Predicción consumo":
             st.error(f"Error: {exc}")
 
 
-# ═══════════════════════════════════════════════════════════════════════════════
+# ══════════════════════════════════════════════════════════════════[...]
 # PAGE: Histórico generación
-# ═══════════════════════════════════════════════════════════════════════════════
+# ══════════════════════════════════════════════════════════════════[...]
 elif page == "📈 Histórico generación":
     st.markdown('<span class="page-title">📈 Histórico de generación</span>', unsafe_allow_html=True)
     st.markdown('<div class="page-subtitle">Evolución de la generación eólica y renovable en las Islas Canarias</div>', unsafe_allow_html=True)
 
-    eolica_dash = api_get("/dashboard/eolica")
+    eolica_dash = api_get("/api/dashboard/eolica")
     k = eolica_dash.get("kpis", {})
     best = next((r for r in eolica_dash["metrics"] if r.get("modelo") == "HGB"), {})
 
@@ -544,9 +544,9 @@ elif page == "📈 Histórico generación":
         st.plotly_chart(_apply(fig_wind, {"height": 270}), use_container_width=True)
 
 
-# ═══════════════════════════════════════════════════════════════════════════════
+# ══════════════════════════════════════════════════════════════════[...]
 # PAGE: Predicción eólica
-# ═══════════════════════════════════════════════════════════════════════════════
+# ══════════════════════════════════════════════════════════════════[...]
 else:
     st.markdown('<span class="page-title">🌬️ Predicción eólica</span>', unsafe_allow_html=True)
     st.markdown('<div class="page-subtitle">Estimación de generación eólica con intervalo de incertidumbre</div>', unsafe_allow_html=True)
@@ -580,7 +580,7 @@ else:
             }
             if weather_e:
                 payload_e["weather"] = weather_e
-            result_e = api_post("/predict/eolica", payload_e)
+            result_e = api_post("/api/predict/eolica", payload_e)
             if result_e["warnings"]:
                 st.warning("⚠️ " + " ".join(result_e["warnings"]))
 
