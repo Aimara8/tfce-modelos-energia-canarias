@@ -327,13 +327,4 @@ Proyecto desarrollado por **Aimara** como parte del TFCE.
 
 ---
 
-## Contacto
-
-Para dudas, sugerencias o incidencias, abre un issue en el repositorio:
-
-```text
-https://github.com/Aimara8/tfce-modelos-energia-canarias/issues
-```
----
-
 **Última actualización:** 2026-05-26
