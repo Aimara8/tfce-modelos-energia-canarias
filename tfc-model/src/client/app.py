@@ -21,23 +21,92 @@ COLORS = {
 TOTAL_CANARY_MUNICIPALITIES = 87
 
 MUNICIPALITY_COORDS = {
-    "Adeje": (28.1227, -16.7260), "Agaete": (28.1000, -15.7000), "Alajeró": (28.0621, -17.2407),
-    "Arona": (28.0996, -16.6810), "Arrecife": (28.9630, -13.5477), "Artenara": (28.0206, -15.6469),
-    "Arucas": (28.1198, -15.5231), "Betancuria": (28.4240, -14.0560), "Breña Baja": (28.6300, -17.7900),
-    "El Pinar de El Hierro": (27.7250, -17.9850), "Fuencaliente de La Palma": (28.4880, -17.8460),
-    "Garachico": (28.3733, -16.7634), "Haría": (29.1454, -13.4994), "Hermigua": (28.1674, -17.1909),
-    "La Guancha": (28.3732, -16.6510), "La Orotava": (28.3908, -16.5231),
-    "Las Palmas de Gran Canaria": (28.1235, -15.4363), "Mogán": (27.8839, -15.7254),
-    "Moya": (28.1110, -15.5820), "Puerto del Rosario": (28.5004, -13.8627),
-    "Puntagorda": (28.7740, -17.9780), "Pájara": (28.3500, -14.1070),
-    "San Bartolomé de Tirajana": (27.9248, -15.5733), "San Cristóbal de La Laguna": (28.4874, -16.3159),
-    "San Sebastián de La Gomera": (28.0916, -17.1133), "Santa Cruz de La Palma": (28.6835, -17.7642),
-    "Santa Cruz de Tenerife": (28.4636, -16.2518), "Santa Lucía de Tirajana": (27.9117, -15.5407),
-    "Santa María de Guía de Gran Canaria": (28.1397, -15.6329), "Santiago del Teide": (28.2944, -16.8168),
-    "Teguise": (29.0605, -13.5598), "Telde": (27.9955, -15.4174), "Tuineje": (28.3231, -14.0477),
-    "Vallehermoso": (28.1796, -17.2638), "Valverde": (27.8099, -17.9158),
-    "Vega de San Mateo": (28.0089, -15.5329), "Vilaflor de Chasna": (28.1562, -16.6359),
-    "Villa de Mazo": (28.6090, -17.7780), "Yaiza": (28.9529, -13.7656),
+    "Adeje": (28.1227, -16.7260),
+    "Agaete": (28.1000, -15.7000),
+    "Agulo": (28.154655, -17.205872),
+    "Agüimes": (27.943760, -15.422791),
+    "Alajeró": (28.0621, -17.2407),
+    "Antigua": (28.435852, -14.011353),
+    "Arafo": (28.435852, -16.465912),
+    "Arico": (28.154655, -16.493195),
+    "Arona": (28.0996, -16.6810),
+    "Arrecife": (28.9630, -13.5477),
+    "Artenara": (28.0206, -15.6469),
+    "Arucas": (28.1198, -15.5231),
+    "Barlovento": (28.787346, -17.794281),
+    "Betancuria": (28.4240, -14.0560),
+    "Breña Alta": (28.646748, -17.753723),
+    "Breña Baja": (28.6300, -17.7900),
+    "Buenavista del Norte": (28.365553, -16.855835),
+    "Candelaria": (28.435852, -16.363647),
+    "El Paso": (28.646748, -17.856323),
+    "El Pinar de El Hierro": (27.7250, -17.9850),
+    "El Rosario": (28.365553, -16.447235),
+    "El Sauzal": (28.435852, -16.465912),
+    "El Tanque": (28.365553, -16.855835),
+    "Fasnia": (28.224955, -16.409973),
+    "Firgas": (28.084358, -15.559326),
+    "Fuencaliente de La Palma": (28.4880, -17.8460),
+    "Garachico": (28.3733, -16.7634),
+    "Garafía": (28.787346, -17.897156),
+    "Granadilla de Abona": (28.154655, -16.493195),
+    "Guía de Isora": (28.224955, -16.817657),
+    "Gáldar": (28.154655, -15.678741),
+    "Haría": (29.1454, -13.4994),
+    "Hermigua": (28.1674, -17.1909),
+    "Icod de los Vinos": (28.365553, -16.855835),
+    "Ingenio": (27.943760, -15.422791),
+    "La Aldea de San Nicolás": (27.943760, -15.828644),
+    "La Guancha": (28.3732, -16.6510),
+    "La Matanza de Acentejo": (28.435852, -16.465912),
+    "La Oliva": (28.576448, -13.940796),
+    "La Orotava": (28.3908, -16.5231),
+    "La Victoria de Acentejo": (28.435852, -16.465912),
+    "Las Palmas de Gran Canaria": (28.1235, -15.4363),
+    "Los Llanos de Aridane": (28.717047, -17.979431),
+    "Los Realejos": (28.435852, -16.465912),
+    "Los Silos": (28.365553, -16.855835),
+    "Mogán": (27.8839, -15.7254),
+    "Moya": (28.1110, -15.5820),
+    "Puerto de la Cruz": (28.435852, -16.465912),
+    "Puerto del Rosario": (28.5004, -13.8627),
+    "Puntagorda": (28.7740, -17.9780),
+    "Puntallana": (28.646748, -17.753723),
+    "Pájara": (28.3500, -14.1070),
+    "San Andrés y Sauces": (28.787346, -17.794281),
+    "San Bartolomé": (28.998241, -13.623871),
+    "San Bartolomé de Tirajana": (27.9248, -15.5733),
+    "San Cristóbal de La Laguna": (28.4874, -16.3159),
+    "San Juan de la Rambla": (28.365553, -16.753693),
+    "San Miguel de Abona": (28.084358, -16.576294),
+    "San Sebastián de La Gomera": (28.0916, -17.1133),
+    "Santa Brígida": (28.014060, -15.440186),
+    "Santa Cruz de La Palma": (28.6835, -17.7642),
+    "Santa Cruz de Tenerife": (28.4636, -16.2518),
+    "Santa Lucía de Tirajana": (27.9117, -15.5407),
+    "Santa María de Guía de Gran Canaria": (28.1397, -15.6329),
+    "Santa Úrsula": (28.435852, -16.465912),
+    "Santiago del Teide": (28.2944, -16.8168),
+    "Tacoronte": (28.435852, -16.465912),
+    "Tazacorte": (28.717047, -17.979431),
+    "Tegueste": (28.506150, -16.382263),
+    "Teguise": (29.0605, -13.5598),
+    "Tejeda": (28.014060, -15.643341),
+    "Telde": (27.9955, -15.4174),
+    "Teror": (28.084358, -15.559326),
+    "Tijarafe": (28.717047, -17.979431),
+    "Tinajo": (29.068540, -13.639496),
+    "Tías": (28.998241, -13.623871),
+    "Tuineje": (28.3231, -14.0477),
+    "Valle Gran Rey": (28.084358, -17.288147),
+    "Vallehermoso": (28.1796, -17.2638),
+    "Valleseco": (28.014060, -15.541748),
+    "Valverde": (27.8099, -17.9158),
+    "Valsequillo de Gran Canaria": (28.014060, -15.440186),
+    "Vega de San Mateo": (28.0089, -15.5329),
+    "Vilaflor de Chasna": (28.1562, -16.6359),
+    "Villa de Mazo": (28.6090, -17.7780),
+    "Yaiza": (28.9529, -13.7656),
 }
 
 COORDS_CSV = Path(__file__).resolve().parents[3] / "tfc-datasets" / "outputs" / "municipality_coordinates_open_meteo.csv"
@@ -65,7 +134,7 @@ st.set_page_config(
     initial_sidebar_state="expanded",
 )
 
-# ─── helpers ────────────────────────────────────────────────────────────[...]
+# ─── helpers ──────────────────────────────────────────────────────────
 def mwh(value: float | None) -> str:
     if value is None:
         return "sin dato"
@@ -89,11 +158,11 @@ def api_post(path: str, payload: dict) -> dict:
 
 @st.cache_data(ttl=30)
 def load_metadata(base_url: str) -> dict:
-    r = requests.get(f"{base_url}/api/metadata", timeout=15)
+    r = requests.get(f"{base_url}/metadata", timeout=15)
     r.raise_for_status()
     return r.json()
 
-# ─── Leaflet map ──────────────────────────────────────────────────────────[...]
+# ─── Leaflet map ─────────────────────────────────────────────────────────
 def leaflet_map(municipalities: list[str], selected: str | None = None, height: int = 400) -> None:
     markers_js = []
     for name in municipalities:
@@ -144,7 +213,7 @@ def leaflet_map(municipalities: list[str], selected: str | None = None, height: 
     </script></body></html>"""
     components.html(html, height=height + 2, scrolling=False)
 
-# ─── chart helpers ──────────────────────────────────────────────────────────[...]
+# ─── chart helpers ────────────────────────────────────────────────────────
 CHART_BASE = dict(
     paper_bgcolor="rgba(0,0,0,0)",
     plot_bgcolor="rgba(0,0,0,0)",
@@ -205,7 +274,7 @@ def area_chart(df: pd.DataFrame, x: str, y: str, color: str) -> go.Figure:
     fig.update_traces(fill="tozeroy", line_width=2)
     return _apply(fig, {"height": 280, "yaxis_title": "MWh", "xaxis_title": ""})
 
-# ─── weather form ──────────────────────────────────────────────────────────[...]
+# ─── weather form ────────────────────────────────────────────────────────
 def weather_form(prefix: str, wind_default: float) -> dict:
     st.caption("Meteorología diaria agregada")
     c1, c2, c3 = st.columns(3)
@@ -244,7 +313,7 @@ def weather_form(prefix: str, wind_default: float) -> dict:
         "weather_station_count": int(stations),
     }
 
-# ─── CSS ─────────────────────────────────────────────────────────────[...]
+# ─── CSS ───────────────────────────────────────────────────────────
 st.markdown("""
 <style>
 @import url('https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,300;0,9..40,400;0,9..40,500;0,9..40,600&display=swap');
@@ -253,7 +322,16 @@ html, body, [class*="css"] { font-family: 'DM Sans', sans-serif !important; }
 
 .stApp { background: #080f1e; }
 
-.block-container { padding: 1.5rem 2rem 2rem 2rem !important; max-width: 1400px; }
+/* ── hide header ── */
+header { display: none !important; }
+.stAppHeader { display: none !important; }
+[data-testid="stHeader"] { display: none !important; }
+
+.block-container { 
+  padding: 0.8rem 2rem 2rem 2rem !important; 
+  max-width: 1400px; 
+  margin-top: -1.5rem !important;
+}
 
 /* ── sidebar: clean dark, no color fights ── */
 section[data-testid="stSidebar"] {
@@ -297,8 +375,21 @@ div[data-testid="stMetric"] [data-testid="stMetricValue"] {
 div[data-testid="stMetricDelta"] { color: #3fb950 !important; }
 
 /* ── page title ── */
-.page-title { font-size: 1.6rem; font-weight: 600; color: #e6edf3; letter-spacing: -.02em; }
-.page-subtitle { font-size: 0.85rem; color: #484f58; margin: .15rem 0 1.4rem 0; }
+.page-title { 
+  font-size: 1.6rem; 
+  font-weight: 600; 
+  color: #e6edf3; 
+  letter-spacing: -.02em; 
+  margin-top: 0rem !important;
+  margin-bottom: 0.3rem !important;
+  padding-top: 0 !important;
+}
+.page-subtitle { 
+  font-size: 0.85rem; 
+  color: #484f58; 
+  margin: 0rem 0 1.2rem 0 !important; 
+  padding-top: 0 !important;
+}
 
 /* ── section label ── */
 .slabel {
@@ -347,7 +438,7 @@ details summary { color: #8b949e !important; }
 """, unsafe_allow_html=True)
 
 
-# ─── sidebar ──────────────────────────────────────────────────────────[...]
+# ─── sidebar ──────────────────────────────────────────────────────────
 with st.sidebar:
     st.markdown("**⚡ Demo TFC**")
     st.markdown('<div class="slabel" style="margin-top:.5rem">Secciones</div>', unsafe_allow_html=True)
@@ -362,7 +453,7 @@ with st.sidebar:
     api_url = st.text_input("url", value=API_URL, label_visibility="collapsed")
     try:
         metadata = load_metadata(api_url)
-        health   = api_get("/api/health")
+        health   = api_get("/health")
         st.success("API activa")
         for m in health.get("modelos_cargados", []):
             st.markdown(f'<span class="badge">{m}</span>', unsafe_allow_html=True)
@@ -371,59 +462,62 @@ with st.sidebar:
         st.stop()
 
 
-# ══════════════════════════════════════════════════════════════════[...]
+# ════════════════════════════════════════════════════════════════
 # PAGE: Histórico consumo
-# ══════════════════════════════════════════════════════════════════[...]
+# ════════════════════════════════════════════════════════════════
 if page == "📊 Histórico consumo":
     st.markdown('<span class="page-title">📊 Histórico de consumo</span>', unsafe_allow_html=True)
     st.markdown('<div class="page-subtitle">Análisis histórico de demanda eléctrica por municipio</div>', unsafe_allow_html=True)
 
-    consumo_dash = api_get("/api/dashboard/consumo")
-    k = consumo_dash.get("kpis", {})
+    try:
+        consumo_dash = api_get("/dashboard/consumo")
+        k = consumo_dash.get("kpis", {})
 
-    # intentar obtener consumo medio diario desde la API; si no existe, aproximar desde monthly_total
-    avg_daily = k.get("avg_daily_consumption")
-    if avg_daily is None and consumo_dash.get("monthly_total"):
-        try:
-            _mdf = pd.DataFrame(consumo_dash["monthly_total"])
-            if "mwh" in _mdf.columns and not _mdf["mwh"].empty:
-                avg_daily = float(_mdf["mwh"].mean()) / 30.0  # aproximación diaria
-        except Exception:
-            avg_daily = None
+        # intentar obtener consumo medio diario desde la API; si no existe, aproximar desde monthly_total
+        avg_daily = k.get("avg_daily_consumption")
+        if avg_daily is None and consumo_dash.get("monthly_total"):
+            try:
+                _mdf = pd.DataFrame(consumo_dash["monthly_total"])
+                if "mwh" in _mdf.columns and not _mdf["mwh"].empty:
+                    avg_daily = float(_mdf["mwh"].mean()) / 30.0  # aproximación diaria
+            except Exception:
+                avg_daily = None
 
-    # KPIs contextuales de esta sección
-    c1, c2, c3, c4 = st.columns(4)
-    c1.metric("Municipios modelados", f"{k.get('municipalities')}/{TOTAL_CANARY_MUNICIPALITIES}")
-    c2.metric("Consumo medio diario", mwh(avg_daily))
-    c3.metric("Último día disponible", k.get("date_max"))
-    c4.metric("Demanda último día", mwh(k.get("latest_total_mwh")))
+        # KPIs contextuales de esta sección
+        c1, c2, c3, c4 = st.columns(4)
+        c1.metric("Municipios modelados", f"{k.get('municipalities')}/{TOTAL_CANARY_MUNICIPALITIES}")
+        c2.metric("Consumo medio diario", mwh(avg_daily))
+        c3.metric("Último día disponible", k.get("date_max"))
+        c4.metric("Demanda último día", mwh(k.get("latest_total_mwh")))
 
-    st.markdown("---")
-    m1, m2 = st.columns([1.35, 1])
-    with m1:
-        st.markdown('<div class="slabel">Distribución geográfica</div>', unsafe_allow_html=True)
-        leaflet_map(metadata["consumption"]["municipalities"], height=390)
-    with m2:
-        st.markdown('<div class="slabel">Mix de consumo · último día</div>', unsafe_allow_html=True)
-        st.plotly_chart(donut_chart(consumo_dash["sector_totals"], "sector", "mwh"), use_container_width=True)
+        st.markdown("---")
+        m1, m2 = st.columns([1.35, 1])
+        with m1:
+            st.markdown('<div class="slabel">Distribución geográfica</div>', unsafe_allow_html=True)
+            leaflet_map(metadata["consumption"]["municipalities"], height=390)
+        with m2:
+            st.markdown('<div class="slabel">Mix de consumo · último día</div>', unsafe_allow_html=True)
+            st.plotly_chart(donut_chart(consumo_dash["sector_totals"], "sector", "mwh"), use_container_width=True)
 
-    st.markdown("---")
-    g1, g2 = st.columns(2)
-    with g1:
-        st.markdown('<div class="slabel">Demanda total mensual</div>', unsafe_allow_html=True)
-        monthly_df = pd.DataFrame(consumo_dash["monthly_total"])
-        st.plotly_chart(area_chart(monthly_df, "month", "mwh", COLORS["consumption"]), use_container_width=True)
-    with g2:
-        st.markdown('<div class="slabel">Top municipios · último día</div>', unsafe_allow_html=True)
-        top_df = pd.DataFrame(consumo_dash["top_municipalities"])
-        fig_top = px.bar(top_df, x="mwh", y="municipality", orientation="h",
-                         color_discrete_sequence=[COLORS["accent"]])
-        st.plotly_chart(_apply(fig_top, {"height": 280}), use_container_width=True)
+        st.markdown("---")
+        g1, g2 = st.columns(2)
+        with g1:
+            st.markdown('<div class="slabel">Demanda total mensual</div>', unsafe_allow_html=True)
+            monthly_df = pd.DataFrame(consumo_dash["monthly_total"])
+            st.plotly_chart(area_chart(monthly_df, "month", "mwh", COLORS["consumption"]), use_container_width=True)
+        with g2:
+            st.markdown('<div class="slabel">Top municipios · último día</div>', unsafe_allow_html=True)
+            top_df = pd.DataFrame(consumo_dash["top_municipalities"])
+            fig_top = px.bar(top_df, x="mwh", y="municipality", orientation="h",
+                             color_discrete_sequence=[COLORS["accent"]])
+            st.plotly_chart(_apply(fig_top, {"height": 280}), use_container_width=True)
+    except Exception as exc:
+        st.error(f"Error cargando histórico de consumo: {exc}")
 
 
-# ══════════════════════════════════════════════════════════════════[...]
+# ════════════════════════════════════════════════════════════════
 # PAGE: Predicción consumo
-# ══════════════════════════════════════════════════════════════════[...]
+# ════════════════════════════════════════════════════════════════
 elif page == "🔮 Predicción consumo":
     st.markdown('<span class="page-title">🔮 Predicción de consumo</span>', unsafe_allow_html=True)
     st.markdown('<div class="page-subtitle">Estimación de demanda eléctrica diaria por municipio y sector</div>', unsafe_allow_html=True)
@@ -433,7 +527,10 @@ elif page == "🔮 Predicción consumo":
     with cfg_col:
         st.markdown('<div class="slabel">Escenario</div>', unsafe_allow_html=True)
         municipality = st.selectbox("Municipio", metadata["consumption"]["municipalities"])
-        default_date = pd.to_datetime(metadata["consumption"]["date_max"]).date()
+        try:
+            default_date = pd.to_datetime(metadata.get("consumption", {}).get("date_max", pd.Timestamp.now())).date()
+        except (KeyError, TypeError, ValueError):
+            default_date = pd.Timestamp.now().date()
         fecha = st.date_input("Fecha de predicción", value=default_date, key="fecha_consumo")
         use_hist = st.checkbox("Meteorología automática", value=True, key="consumo_hist_weather")
         st.info("Usa histórico local si existe. Para fechas futuras intenta Open-Meteo.")
@@ -452,7 +549,7 @@ elif page == "🔮 Predicción consumo":
             payload = {"municipality": municipality, "fecha": str(fecha)}
             if weather:
                 payload["weather"] = weather
-            result = api_post("/api/predict/consumption", payload)
+            result = api_post("/predict/consumo", payload)
             if result["warnings"]:
                 st.warning("⚠️ " + " ".join(result["warnings"]))
 
@@ -482,71 +579,74 @@ elif page == "🔮 Predicción consumo":
             st.error(f"Error: {exc}")
 
 
-# ══════════════════════════════════════════════════════════════════[...]
+# ════════════════════════════════════════════════════════════════
 # PAGE: Histórico generación
-# ══════════════════════════════════════════════════════════════════[...]
+# ════════════════════════════════════════════════════════════════
 elif page == "📈 Histórico generación":
     st.markdown('<span class="page-title">📈 Histórico de generación</span>', unsafe_allow_html=True)
     st.markdown('<div class="page-subtitle">Evolución de la generación eólica y renovable en las Islas Canarias</div>', unsafe_allow_html=True)
 
-    eolica_dash = api_get("/api/dashboard/eolica")
-    k = eolica_dash.get("kpis", {})
-    best = next((r for r in eolica_dash["metrics"] if r.get("modelo") == "HGB"), {})
+    try:
+        eolica_dash = api_get("/dashboard/eolica")
+        k = eolica_dash.get("kpis", {})
+        best = next((r for r in eolica_dash["metrics"] if r.get("modelo") == "HGB"), {})
 
-    # intentar calcular % cobertura eólica sobre el total (si viene latest_mix)
-    coverage_pct = k.get("renewable_coverage_pct")
-    if coverage_pct is None and eolica_dash.get("latest_mix"):
-        try:
-            _mix = pd.DataFrame(eolica_dash["latest_mix"])
-            if {"technology", "mwh"}.issubset(_mix.columns):
-                total = _mix["mwh"].sum() if not _mix["mwh"].empty else 0.0
-                eolica_sum = _mix.loc[_mix["technology"].str.lower().str.contains("eol", na=False), "mwh"].sum()
-                coverage_pct = (eolica_sum / total * 100.0) if total > 0 else None
-        except Exception:
-            coverage_pct = None
+        # intentar calcular % cobertura eólica sobre el total (si viene latest_mix)
+        coverage_pct = k.get("renewable_coverage_pct")
+        if coverage_pct is None and eolica_dash.get("latest_mix"):
+            try:
+                _mix = pd.DataFrame(eolica_dash["latest_mix"])
+                if {"technology", "mwh"}.issubset(_mix.columns):
+                    total = _mix["mwh"].sum() if not _mix["mwh"].empty else 0.0
+                    eolica_sum = _mix.loc[_mix["technology"].str.lower().str.contains("eol", na=False), "mwh"].sum()
+                    coverage_pct = (eolica_sum / total * 100.0) if total > 0 else None
+            except Exception:
+                coverage_pct = None
 
-    # KPIs contextuales de esta sección
-    e1, e2, e3, e4 = st.columns(4)
-    e1.metric("Eólica último día", mwh(k.get("latest_eolica_mwh")))
-    e2.metric("Viento medio", f"{k.get('latest_wind_ms', 0.0):.2f} m/s")
-    e3.metric("% cobertura renovable", pct(coverage_pct))
-    e4.metric("Precisión modelo (WMAPE)", pct(best.get("WMAPE")))
+        # KPIs contextuales de esta sección
+        e1, e2, e3, e4 = st.columns(4)
+        e1.metric("Eólica último día", mwh(k.get("latest_eolica_mwh")))
+        e2.metric("Viento medio", f"{k.get('latest_wind_ms', 0.0):.2f} m/s")
+        e3.metric("% cobertura renovable", pct(coverage_pct))
+        e4.metric("Precisión modelo (WMAPE)", pct(best.get("WMAPE")))
 
-    st.markdown("---")
-    g1, g2 = st.columns(2)
-    with g1:
-        st.markdown('<div class="slabel">Mix renovable · último día</div>', unsafe_allow_html=True)
-        st.plotly_chart(donut_chart(eolica_dash["latest_mix"], "technology", "mwh"), use_container_width=True)
-    with g2:
-        monthly = pd.DataFrame(eolica_dash["monthly"])
-        fig_gen = go.Figure()
-        fig_gen.add_trace(go.Scatter(x=monthly["month"], y=monthly["eolica_mwh"],
-                                      mode="lines+markers", name="Eólica",
-                                      line=dict(color=COLORS["wind_dark"], width=2.5)))
-        fig_gen.add_trace(go.Scatter(x=monthly["month"], y=monthly["solar_mwh"],
-                                      mode="lines+markers", name="Solar",
-                                      line=dict(color=COLORS["wind"], width=2.5, dash="dot")))
-        st.markdown('<div class="slabel">Generación media mensual</div>', unsafe_allow_html=True)
-        st.plotly_chart(_apply(fig_gen, {"height": 310,
-            "legend": dict(orientation="h", font=dict(color="#8b949e"))}), use_container_width=True)
+        st.markdown("---")
+        g1, g2 = st.columns(2)
+        with g1:
+            st.markdown('<div class="slabel">Mix renovable · último día</div>', unsafe_allow_html=True)
+            st.plotly_chart(donut_chart(eolica_dash["latest_mix"], "technology", "mwh"), use_container_width=True)
+        with g2:
+            monthly = pd.DataFrame(eolica_dash["monthly"])
+            fig_gen = go.Figure()
+            fig_gen.add_trace(go.Scatter(x=monthly["month"], y=monthly["eolica_mwh"],
+                                          mode="lines+markers", name="Eólica",
+                                          line=dict(color=COLORS["wind_dark"], width=2.5)))
+            fig_gen.add_trace(go.Scatter(x=monthly["month"], y=monthly["solar_mwh"],
+                                          mode="lines+markers", name="Solar",
+                                          line=dict(color=COLORS["wind"], width=2.5, dash="dot")))
+            st.markdown('<div class="slabel">Generación media mensual</div>', unsafe_allow_html=True)
+            st.plotly_chart(_apply(fig_gen, {"height": 310,
+                "legend": dict(orientation="h", font=dict(color="#8b949e"))}), use_container_width=True)
 
-    st.markdown("---")
-    g3, g4 = st.columns(2)
-    with g3:
-        err_df = pd.DataFrame(eolica_dash["monthly_errors"])
-        fig_err = px.bar(err_df, x="month", y="wmape", color_discrete_sequence=[COLORS["danger"]])
-        st.markdown('<div class="slabel">Error WMAPE mensual</div>', unsafe_allow_html=True)
-        st.plotly_chart(_apply(fig_err, {"height": 270}), use_container_width=True)
-    with g4:
-        fig_wind = px.line(monthly, x="month", y="wind_ms", markers=True,
-                            color_discrete_sequence=[COLORS["accent"]])
-        st.markdown('<div class="slabel">Viento medio mensual</div>', unsafe_allow_html=True)
-        st.plotly_chart(_apply(fig_wind, {"height": 270}), use_container_width=True)
+        st.markdown("---")
+        g3, g4 = st.columns(2)
+        with g3:
+            err_df = pd.DataFrame(eolica_dash["monthly_errors"])
+            fig_err = px.bar(err_df, x="month", y="wmape", color_discrete_sequence=[COLORS["danger"]])
+            st.markdown('<div class="slabel">Error WMAPE mensual</div>', unsafe_allow_html=True)
+            st.plotly_chart(_apply(fig_err, {"height": 270}), use_container_width=True)
+        with g4:
+            fig_wind = px.line(monthly, x="month", y="wind_ms", markers=True,
+                                color_discrete_sequence=[COLORS["accent"]])
+            st.markdown('<div class="slabel">Viento medio mensual</div>', unsafe_allow_html=True)
+            st.plotly_chart(_apply(fig_wind, {"height": 270}), use_container_width=True)
+    except Exception as exc:
+        st.error(f"Error cargando histórico de generación: {exc}")
 
 
-# ══════════════════════════════════════════════════════════════════[...]
+# ════════════════════════════════════════════════════════════════
 # PAGE: Predicción eólica
-# ══════════════════════════════════════════════════════════════════[...]
+# ════════════════════════════════════════════════════════════════
 else:
     st.markdown('<span class="page-title">🌬️ Predicción eólica</span>', unsafe_allow_html=True)
     st.markdown('<div class="page-subtitle">Estimación de generación eólica con intervalo de incertidumbre</div>', unsafe_allow_html=True)
@@ -555,7 +655,10 @@ else:
     cfg_col, map_col = st.columns([1, 1.4])
     with cfg_col:
         st.markdown('<div class="slabel">Escenario</div>', unsafe_allow_html=True)
-        default_wind_date = pd.to_datetime(metadata["renewable"]["date_max"]).date()
+        try:
+            default_wind_date = pd.to_datetime(metadata.get("renewable", {}).get("date_max", pd.Timestamp.now())).date()
+        except (KeyError, TypeError, ValueError):
+            default_wind_date = pd.Timestamp.now().date()
         fecha_eolica  = st.date_input("Fecha", value=default_wind_date, key="fecha_eolica")
         mun_count     = st.number_input("Municipios con meteorología", value=87, min_value=1, step=1)
         station_count = st.number_input("Estaciones agregadas",        value=50, min_value=1, step=1)
@@ -580,7 +683,7 @@ else:
             }
             if weather_e:
                 payload_e["weather"] = weather_e
-            result_e = api_post("/api/predict/eolica", payload_e)
+            result_e = api_post("/predict/eolica", payload_e)
             if result_e["warnings"]:
                 st.warning("⚠️ " + " ".join(result_e["warnings"]))
 
