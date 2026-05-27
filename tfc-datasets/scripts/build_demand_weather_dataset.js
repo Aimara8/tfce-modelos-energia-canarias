@@ -2,6 +2,10 @@ const fs = require("fs");
 const path = require("path");
 const readline = require("readline");
 
+// Construye el dataset base de consumo + meteorologia observada.
+// Entradas: ISTAC para demanda electrica y SITCAN para estaciones/observaciones.
+// Salidas: estaciones limpias, consumo limpio, meteorologia diaria municipal
+// y dataset unido consumo + meteorologia.
 const projectRoot = path.resolve(__dirname, "..");
 const config = {
   basePath: projectRoot,
@@ -14,6 +18,7 @@ const config = {
   outputDir: "outputs",
 };
 
+// Corrige variantes de nombres municipales para no duplicar entidades.
 const municipalityAliases = new Map([
   ["Fuencaliente", "Fuencaliente de La Palma"],
   ["Guia", "Santa María de Guía de Gran Canaria"],
@@ -23,6 +28,7 @@ const municipalityAliases = new Map([
   ["El Pinar", "El Pinar de El Hierro"],
 ]);
 
+// Traduce codigos ISTAC de flujo energetico a columnas de consumo por sector.
 const demandColumnMap = new Map([
   ["_T", "demand_total_mwh"],
   ["INDUSTRIA", "demand_industria_mwh"],
@@ -30,6 +36,9 @@ const demandColumnMap = new Map([
   ["SERVICIOS", "demand_servicios_mwh"],
 ]);
 
+// Define como se valida y agrega cada variable meteorologica.
+// La direccion media del viento usa media circular porque 359 y 1 grados
+// estan cerca, aunque numericamente parezcan extremos.
 const weatherRules = {
   "Air temperature (avg.)": { column: "temp_avg_c", method: "mean", min: -20, max: 60 },
   "Air temperature (max.)": { column: "temp_max_c", method: "max", min: -20, max: 65 },
@@ -62,6 +71,8 @@ function removeDiacritics(text) {
   return text.normalize("NFD").replace(/\p{Diacritic}/gu, "");
 }
 
+// Normaliza municipios: limpia espacios, quita tildes para buscar alias
+// y devuelve el nombre corregido cuando existe equivalencia conocida.
 function normalizeMunicipalityName(name) {
   if (!name) {
     return null;
@@ -71,6 +82,8 @@ function normalizeMunicipalityName(name) {
   return municipalityAliases.get(asciiKey) || trimmed;
 }
 
+// Extrae municipio e isla desde la descripcion textual de una estacion.
+// Si no hay municipio claro, la estacion queda sin mapear.
 function parseLocationDescription(description) {
   if (!description) {
     return { municipality: null, island: null };
@@ -93,6 +106,7 @@ function parseLocationDescription(description) {
   return { municipality: null, island: null };
 }
 
+// Parser CSV con soporte de comillas y comillas escapadas.
 function parseCsvLine(line) {
   const fields = [];
   let current = "";
@@ -124,6 +138,7 @@ function parseCsvLine(line) {
   return fields;
 }
 
+// Devuelve un mapa nombre_columna -> posicion para acceder por nombre.
 function getColumnIndexMap(headerLine) {
   const fields = parseCsvLine(headerLine);
   const map = new Map();
@@ -153,6 +168,7 @@ function getOrCreateDemandRow(store, municipality, date) {
   return row;
 }
 
+// Crea acumuladores para las diferentes formas de agregacion meteorologica.
 function createAggregator(method) {
   if (method === "mean") {
     return { method, sum: 0, count: 0 };
@@ -166,6 +182,7 @@ function createAggregator(method) {
   throw new Error(`Unsupported aggregation method: ${method}`);
 }
 
+// Incorpora una observacion valida al acumulador correspondiente.
 function updateAggregator(aggregator, value) {
   if (aggregator.method === "mean") {
     aggregator.sum += value;
@@ -188,6 +205,7 @@ function updateAggregator(aggregator, value) {
   }
 }
 
+// Convierte cada acumulador en el valor final que se escribira en el CSV.
 function finalizeAggregator(aggregator) {
   if (aggregator.method === "mean") {
     return aggregator.count === 0 ? null : round4(aggregator.sum / aggregator.count);
@@ -208,6 +226,7 @@ function finalizeAggregator(aggregator) {
   throw new Error(`Unsupported aggregation method: ${aggregator.method}`);
 }
 
+// Guarda observaciones por municipio-fecha y conserva las estaciones usadas.
 function getOrCreateWeatherRow(store, municipality, date) {
   const key = `${municipality}|${date}`;
   let row = store.get(key);
@@ -272,6 +291,8 @@ async function resolveWeatherDirectory(basePath) {
   return basePath;
 }
 
+// Lee el catalogo de estaciones y crea el mapeo estacion -> municipio.
+// Este paso permite transformar observaciones de estaciones en variables municipales.
 async function processStations(basePath) {
   console.log("Cargando estaciones meteorologicas...");
   const filePath = await resolveInputFile(basePath, config.stationsFile, config.legacyStationsFile);
@@ -311,6 +332,8 @@ async function processStations(basePath) {
   return { stationLookup, outputRows };
 }
 
+// Procesa el fichero ISTAC y genera una fila por municipio y fecha.
+// Conserva solo municipios, sectores conocidos y valores validos.
 async function processDemand(basePath) {
   console.log("Procesando demanda ISTAC...");
   const demandRows = new Map();
@@ -358,6 +381,8 @@ async function processDemand(basePath) {
   return demandRows;
 }
 
+// Procesa observaciones meteorologicas anuales, filtra registros validos
+// y agrega cada variable por municipio y fecha.
 async function processWeather(basePath, stationLookup) {
   console.log("Procesando observaciones meteorologicas...");
   const weatherRows = new Map();
@@ -429,6 +454,7 @@ async function processWeather(basePath, stationLookup) {
   return { weatherRows, files };
 }
 
+// Materializa las agregaciones meteorologicas y ordena las filas.
 function finalizeWeatherRows(weatherRows) {
   const finalRows = [];
   for (const row of weatherRows.values()) {
@@ -451,6 +477,7 @@ function finalizeWeatherRows(weatherRows) {
   return finalRows;
 }
 
+// Ordena la demanda ya agrupada por municipio-fecha.
 function finalizeDemandRows(demandRows) {
   const finalRows = Array.from(demandRows.values());
   finalRows.sort((a, b) => {
@@ -462,6 +489,8 @@ function finalizeDemandRows(demandRows) {
   return finalRows;
 }
 
+// Une demanda y meteorologia por municipio y fecha.
+// Si no hay dato meteorologico, se mantienen columnas vacias para filtrar despues.
 function mergeDemandAndWeather(demandRows, weatherRows) {
   const weatherByKey = new Map(weatherRows.map((row) => [`${row.municipality}|${row.date}`, row]));
   const mergedRows = [];

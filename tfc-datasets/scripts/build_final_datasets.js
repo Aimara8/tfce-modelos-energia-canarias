@@ -1,6 +1,9 @@
 const fs = require("fs");
 const path = require("path");
 
+// Construye los datasets finales usados por los modelos.
+// Combina los CSV intermedios de demanda, meteorologia municipal y REE.
+// Tambien puede consultar REE si se ejecuta con --fetch-ree=true.
 const projectRoot = path.resolve(__dirname, "..");
 const config = {
   outputDir: "outputs",
@@ -11,6 +14,8 @@ const config = {
   renewableOutputFile: "outputs/final_renewable_generation_dataset.csv",
 };
 
+// Reglas para pasar de meteorologia municipal a meteorologia regional diaria.
+// Esta agregacion regional es necesaria para unir clima con generacion renovable.
 const weatherAggregationRules = {
   temp_avg_c: "mean",
   temp_max_c: "max",
@@ -28,6 +33,7 @@ const weatherAggregationRules = {
   wind_speed_sdev_ms: "mean",
 };
 
+// Lee opciones de consola: descarga REE, fecha inicial y fecha final.
 function parseArgs(argv) {
   const options = {
     fetchRee: true,
@@ -59,6 +65,7 @@ function parseArgs(argv) {
   return options;
 }
 
+// Parser CSV con soporte de campos entrecomillados.
 function parseCsvLine(line) {
   const fields = [];
   let current = "";
@@ -87,6 +94,7 @@ function parseCsvLine(line) {
   return fields;
 }
 
+// Carga un CSV como array de objetos {columna: valor}.
 function parseCsvFile(filePath) {
   const resolvedFilePath = path.resolve(projectRoot, filePath);
   const lines = fs.readFileSync(resolvedFilePath, "utf8").split(/\r?\n/).filter(Boolean);
@@ -161,6 +169,8 @@ function getDateRange(rows) {
   return { min, max };
 }
 
+// Crea acumuladores ponderados. El peso suele ser el numero de estaciones
+// disponibles, para que municipios con mas soporte meteorologico aporten mas.
 function createAggregator(method) {
   if (method === "mean") {
     return { method, weightedSum: 0, weight: 0 };
@@ -174,6 +184,7 @@ function createAggregator(method) {
   throw new Error(`Metodo no soportado: ${method}`);
 }
 
+// Anade un valor al acumulador regional.
 function updateAggregator(aggregator, value, weight) {
   if (aggregator.method === "mean") {
     aggregator.weightedSum += value * weight;
@@ -196,6 +207,7 @@ function updateAggregator(aggregator, value, weight) {
   }
 }
 
+// Calcula el valor final de cada acumulador.
 function finalizeAggregator(aggregator) {
   if (aggregator.method === "mean") {
     return aggregator.weight === 0 ? null : round4(aggregator.weightedSum / aggregator.weight);
@@ -216,6 +228,7 @@ function finalizeAggregator(aggregator) {
   throw new Error(`Metodo no soportado: ${aggregator.method}`);
 }
 
+// Conserva solo filas de demanda con algun dato meteorologico asociado.
 function buildDemandFinalRows(mergedRows) {
   const weatherColumns = Object.keys(weatherAggregationRules);
   return mergedRows.filter((row) =>
@@ -223,6 +236,8 @@ function buildDemandFinalRows(mergedRows) {
   );
 }
 
+// Agrega la meteorologia municipal por fecha para obtener una serie diaria
+// representativa de Canarias completa.
 function aggregateCanariasWeather(weatherRows) {
   const rowsByDate = new Map();
   const weatherColumns = Object.keys(weatherAggregationRules);
@@ -326,6 +341,7 @@ function buildYearChunks(startDate, endDate) {
   return chunks;
 }
 
+// Consulta la API de REE para un tramo temporal concreto.
 async function fetchReeChunk(startDate, endDate) {
   const baseUrl = "https://apidatos.ree.es/es/datos/generacion/estructura-renovables";
   const url = new URL(baseUrl);
@@ -348,6 +364,7 @@ async function fetchReeChunk(startDate, endDate) {
   return response.json();
 }
 
+// Descarga REE por bloques anuales y transforma la respuesta a filas por fecha.
 async function fetchReeRows(startDate, endDate) {
   const byDate = new Map();
   const chunks = buildYearChunks(startDate, endDate);
@@ -385,6 +402,7 @@ async function fetchReeRows(startDate, endDate) {
   return wideRows;
 }
 
+// Une datos renovables de REE con meteorologia regional agregada.
 function mergeRenewablesAndWeather(reeRows, canariasWeatherRows) {
   const weatherByDate = new Map(canariasWeatherRows.map((row) => [row.date, row]));
   const weatherColumns = [

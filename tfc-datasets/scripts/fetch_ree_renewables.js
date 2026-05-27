@@ -1,10 +1,13 @@
 const fs = require("fs");
 const path = require("path");
 
+// Descarga de REE la estructura diaria de generacion renovable para Canarias.
+// La salida se guarda en formato ancho: una fila por fecha y columnas por tecnologia.
 const REE_BASE_URL = "https://apidatos.ree.es";
 const projectRoot = path.resolve(__dirname, "..");
 const DEFAULT_OUTPUT_WIDE = "outputs/ree_renewables_canarias_daily_wide.csv";
 
+// Lee parametros de consola como rango temporal, granularidad y archivo de salida.
 function parseArgs(argv) {
   const options = {
     start: "2020-01-01",
@@ -89,6 +92,7 @@ function formatDateUtc(date) {
   return date.toISOString().slice(0, 10);
 }
 
+// Divide el rango temporal para evitar peticiones demasiado grandes a la API.
 function buildChunks(startText, endText, mode) {
   const startParts = parseDateParts(startText);
   const endParts = parseDateParts(endText);
@@ -158,6 +162,7 @@ async function writeCsv(filePath, headers, rows) {
   });
 }
 
+// Convierte nombres de tecnologias en nombres de columnas estables.
 function slugifyColumnName(text) {
   return text
     .normalize("NFD")
@@ -167,6 +172,7 @@ function slugifyColumnName(text) {
     .replace(/^_+|_+$/g, "");
 }
 
+// Llama a la API de REE para un tramo concreto.
 async function fetchChunk(options, chunk) {
   const url = new URL(
     `/${options.lang}/datos/generacion/estructura-renovables`,
@@ -197,6 +203,8 @@ async function fetchChunk(options, chunk) {
   return payload;
 }
 
+// Convierte la respuesta jerarquica de REE en filas normalizadas:
+// tecnologia, fecha, valor y porcentaje.
 function flattenPayload(payload) {
   const rows = [];
   for (const entry of payload.included || []) {
@@ -216,6 +224,7 @@ function flattenPayload(payload) {
   return rows;
 }
 
+// Elimina duplicados exactos antes de pivotar a formato ancho.
 function dedupeRows(rows) {
   const unique = new Map();
   for (const row of rows) {
@@ -232,6 +241,8 @@ function dedupeRows(rows) {
   });
 }
 
+// Pivota las filas: una fila por fecha y dos columnas por tecnologia
+// valor absoluto y porcentaje sobre la generacion renovable.
 function buildWideRows(normalizedRows) {
   const technologies = Array.from(
     new Set(normalizedRows.map((row) => row.technology).filter(Boolean)),

@@ -16,6 +16,10 @@ from sklearn.impute import SimpleImputer
 from sklearn.metrics import mean_absolute_error, mean_squared_error, r2_score
 from sklearn.pipeline import Pipeline
 
+# Construye la ampliacion territorial con Open-Meteo.
+# La prioridad es conservar meteorologia observada cuando existe y usar
+# Open-Meteo solo para municipios sin cobertura suficiente.
+# Tambien genera datasets ampliados y compara metricas observado vs ampliado.
 ROOT = Path(__file__).resolve().parents[1]
 REPO_ROOT = ROOT.parent
 OUTPUTS = ROOT / "outputs"
@@ -50,6 +54,7 @@ CONSUMPTION_TARGETS = {
 
 
 def date_chunks(start: str, end: str) -> list[tuple[str, str]]:
+    """Divide el rango temporal por anos para consultar Open-Meteo por bloques."""
     start_ts = pd.Timestamp(start)
     end_ts = pd.Timestamp(end)
     chunks = []
@@ -62,6 +67,7 @@ def date_chunks(start: str, end: str) -> list[tuple[str, str]]:
 
 
 def fetch_archive(municipality: str, lat: float, lon: float, start: str, end: str) -> dict:
+    """Consulta Open-Meteo o reutiliza una respuesta cacheada del mismo tramo."""
     CACHE.mkdir(parents=True, exist_ok=True)
     safe_name = municipality.replace("/", "_").replace(" ", "_")
     cache_path = CACHE / f"{safe_name}_{start}_{end}.json"
@@ -97,6 +103,7 @@ def fetch_archive(municipality: str, lat: float, lon: float, start: str, end: st
 
 
 def circular_mean(values: pd.Series) -> float:
+    """Calcula media circular de direcciones, respetando el ciclo 0-360 grados."""
     clean = values.dropna()
     if clean.empty:
         return np.nan
@@ -106,6 +113,7 @@ def circular_mean(values: pd.Series) -> float:
 
 
 def payload_to_daily(municipality: str, payload: dict) -> pd.DataFrame:
+    """Convierte datos horarios de Open-Meteo en variables diarias por municipio."""
     hourly = payload.get("hourly") or {}
     if not hourly.get("time"):
         return pd.DataFrame()
@@ -151,6 +159,7 @@ def payload_to_daily(municipality: str, payload: dict) -> pd.DataFrame:
 
 
 def build_missing_open_meteo(start: str, end: str) -> pd.DataFrame:
+    """Descarga meteorologia para municipios que faltaban en la fuente observada."""
     coords = pd.read_csv(OUTPUTS / "municipality_coordinates_open_meteo.csv")
     missing = coords[coords[["latitude", "longitude"]].notna().all(axis=1)].copy()
     all_rows = []
@@ -167,6 +176,7 @@ def build_missing_open_meteo(start: str, end: str) -> pd.DataFrame:
 
 
 def build_augmented_weather(open_missing: pd.DataFrame) -> pd.DataFrame:
+    """Une observaciones reales y Open-Meteo, dando prioridad a estaciones reales."""
     observed = pd.read_csv(OUTPUTS / "weather_daily_municipal_clean.csv")
     observed = observed.copy()
     observed["weather_data_source"] = "observed_station"
@@ -179,6 +189,7 @@ def build_augmented_weather(open_missing: pd.DataFrame) -> pd.DataFrame:
 
 
 def build_augmented_demand(augmented_weather: pd.DataFrame) -> pd.DataFrame:
+    """Genera el dataset de demanda ampliado y lo copia al modulo de modelos."""
     istac = pd.read_csv(OUTPUTS / "istac_daily_municipal_clean.csv")
     merged = istac.merge(augmented_weather, on=["municipality", "date"], how="left")
     final = merged[merged[WEATHER_COLUMNS].notna().any(axis=1)].copy()
@@ -189,15 +200,18 @@ def build_augmented_demand(augmented_weather: pd.DataFrame) -> pd.DataFrame:
 
 
 def wmape(y_true: np.ndarray, y_pred: np.ndarray) -> float:
+    """Error porcentual ponderado por el volumen real."""
     return float(np.sum(np.abs(y_true - y_pred)) / np.sum(np.abs(y_true)) * 100)
 
 
 def mape(y_true: np.ndarray, y_pred: np.ndarray) -> float:
+    """Error porcentual medio fila a fila; ignora valores reales iguales a cero."""
     mask = y_true != 0
     return float(np.mean(np.abs((y_true[mask] - y_pred[mask]) / y_true[mask])) * 100)
 
 
 def metrics(y_true: np.ndarray, y_pred: np.ndarray) -> dict[str, float]:
+    """Calcula el conjunto comun de metricas de evaluacion."""
     return {
         "MAE": float(mean_absolute_error(y_true, y_pred)),
         "RMSE": float(np.sqrt(mean_squared_error(y_true, y_pred))),
@@ -208,6 +222,7 @@ def metrics(y_true: np.ndarray, y_pred: np.ndarray) -> dict[str, float]:
 
 
 def add_consumption_features(df_raw: pd.DataFrame, target: str) -> tuple[pd.DataFrame, list[str]]:
+    """Crea features de consumo: calendario, HDD/CDD, lags y medias moviles."""
     df = df_raw.dropna(subset=[target]).copy()
     df["date"] = pd.to_datetime(df["date"])
     mapping = {name: idx for idx, name in enumerate(sorted(df["municipality"].dropna().unique()))}
@@ -248,6 +263,7 @@ def add_consumption_features(df_raw: pd.DataFrame, target: str) -> tuple[pd.Data
 
 
 def evaluate_consumption(name: str, df: pd.DataFrame) -> list[dict]:
+    """Entrena XGBoost por sector y evalua con separacion temporal 80/20."""
     import xgboost as xgb
 
     rows = []
@@ -288,6 +304,7 @@ def evaluate_consumption(name: str, df: pd.DataFrame) -> list[dict]:
 
 
 def aggregate_canarias_weather(weather: pd.DataFrame) -> pd.DataFrame:
+    """Agrega meteorologia municipal a una serie diaria regional de Canarias."""
     weather = weather.copy()
     weather["date"] = pd.to_datetime(weather["date"])
     numeric = WEATHER_COLUMNS
@@ -298,6 +315,7 @@ def aggregate_canarias_weather(weather: pd.DataFrame) -> pd.DataFrame:
 
 
 def evaluate_eolica(name: str, weather: pd.DataFrame) -> dict:
+    """Evalua generacion eolica con HGB usando clima regional y lags temporales."""
     ree = pd.read_csv(OUTPUTS / "ree_renewables_canarias_daily_wide.csv", parse_dates=["date"])
     merged = ree.merge(aggregate_canarias_weather(weather), on="date", how="inner")
     work = merged.dropna(subset=["ree_eolica_value"]).sort_values("date").reset_index(drop=True)
@@ -352,6 +370,7 @@ def evaluate_eolica(name: str, weather: pd.DataFrame) -> dict:
 
 
 def build_augmented_renewable(augmented_weather: pd.DataFrame) -> pd.DataFrame:
+    """Genera el dataset renovable ampliado uniendo REE con meteorologia regional."""
     ree = pd.read_csv(OUTPUTS / "ree_renewables_canarias_daily_wide.csv", parse_dates=["date"])
     if "ree_generacion_renovable_pct" in ree.columns:
         ree = ree.drop(columns=["ree_generacion_renovable_pct"])
@@ -368,6 +387,7 @@ def build_augmented_renewable(augmented_weather: pd.DataFrame) -> pd.DataFrame:
 
 
 def write_report(results: pd.DataFrame, final: pd.DataFrame, open_missing: pd.DataFrame) -> None:
+    """Escribe el informe markdown con cobertura, metricas y archivos generados."""
     current_municipalities = int(final.loc[final["weather_data_source"] == "observed_station", "municipality"].nunique())
     total = final["municipality"].nunique()
     added = total - current_municipalities
@@ -448,6 +468,7 @@ def write_report(results: pd.DataFrame, final: pd.DataFrame, open_missing: pd.Da
 
 
 def main() -> None:
+    """Orquesta descarga, construccion de datasets, evaluacion y reporte final."""
     started = time.perf_counter()
     tracemalloc.start()
     parser = argparse.ArgumentParser()
