@@ -19,6 +19,8 @@ COLORS = {
 }
 
 TOTAL_CANARY_MUNICIPALITIES = 87
+DEFAULT_WIND_MUNICIPALITY_COUNT = 87
+DEFAULT_WIND_STATION_COUNT = 50
 
 MUNICIPALITY_COORDS = {
     "Adeje": (28.1227, -16.7260),
@@ -242,6 +244,18 @@ def pct(value: float | None) -> str:
     if value is None:
         return "sin dato"
     return f"{value:.1f}%"
+
+def share_pct(rows: list[dict], name_col: str, value_col: str, selected_name: str) -> float | None:
+    df = pd.DataFrame(rows)
+    if df.empty or name_col not in df.columns or value_col not in df.columns:
+        return None
+    values = pd.to_numeric(df[value_col], errors="coerce")
+    total = values.sum()
+    if not total:
+        return None
+    names = df[name_col].astype(str).str.strip().str.lower()
+    selected = values[names == selected_name.strip().lower()].sum()
+    return float(selected / total * 100.0)
 
 def api_get(path: str) -> dict:
     r = requests.get(f"{api_url}{path}", timeout=15)
@@ -689,24 +703,14 @@ elif page == "📈 Histórico generación":
         k = eolica_dash.get("kpis", {})
         best = next((r for r in eolica_dash["metrics"] if r.get("modelo") == "HGB"), {})
 
-        # intentar calcular % cobertura eólica sobre el total (si viene latest_mix)
-        coverage_pct = k.get("renewable_coverage_pct")
-        if coverage_pct is None and eolica_dash.get("latest_mix"):
-            try:
-                _mix = pd.DataFrame(eolica_dash["latest_mix"])
-                if {"technology", "mwh"}.issubset(_mix.columns):
-                    total = _mix["mwh"].sum() if not _mix["mwh"].empty else 0.0
-                    eolica_sum = _mix.loc[_mix["technology"].str.lower().str.contains("eol", na=False), "mwh"].sum()
-                    coverage_pct = (eolica_sum / total * 100.0) if total > 0 else None
-            except Exception:
-                coverage_pct = None
+        eolica_mix_pct = share_pct(eolica_dash.get("latest_mix", []), "technology", "mwh", "eolica")
 
         # KPIs contextuales de esta sección
         e1, e2, e3, e4 = st.columns(4)
         e1.metric("Eólica último día", mwh(k.get("latest_eolica_mwh")))
         e2.metric("Viento medio", f"{k.get('latest_wind_ms', 0.0):.2f} m/s")
-        e3.metric("% cobertura renovable", pct(coverage_pct))
-        e4.metric("Precisión modelo (WMAPE)", pct(best.get("WMAPE")))
+        e3.metric("Eólica en renovables", pct(eolica_mix_pct))
+        e4.metric("Error histórico (WMAPE)", pct(best.get("WMAPE")))
 
         st.markdown("---")
         g1, g2 = st.columns(2)
@@ -758,8 +762,6 @@ else:
         except (KeyError, TypeError, ValueError):
             default_wind_date = pd.Timestamp.now().date()
         fecha_eolica  = st.date_input("Fecha", value=default_wind_date, key="fecha_eolica")
-        mun_count     = st.number_input("Municipios con meteorología", value=87, min_value=1, step=1)
-        station_count = st.number_input("Estaciones agregadas",        value=50, min_value=1, step=1)
         use_hist_wind = st.checkbox("Meteorología automática agregada", value=True, key="eolica_hist_weather")
         st.warning("La predicción incluye un rango de incertidumbre, no es un valor puntual exacto.")
         if not use_hist_wind:
@@ -776,8 +778,8 @@ else:
         try:
             payload_e = {
                 "fecha": str(fecha_eolica),
-                "canarias_weather_municipality_count": int(mun_count),
-                "canarias_weather_station_count": int(station_count),
+                "canarias_weather_municipality_count": DEFAULT_WIND_MUNICIPALITY_COUNT,
+                "canarias_weather_station_count": DEFAULT_WIND_STATION_COUNT,
             }
             if weather_e:
                 payload_e["weather"] = weather_e
