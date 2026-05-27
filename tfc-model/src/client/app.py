@@ -102,7 +102,7 @@ MUNICIPALITY_COORDS = {
     "Vallehermoso": (28.1796, -17.2638),
     "Valleseco": (28.014060, -15.541748),
     "Valverde": (27.8099, -17.9158),
-    "Valsequillo": (28.014060, -15.440186),
+    "Valsequillo de Gran Canaria": (28.014060, -15.440186),
     "Vega de San Mateo": (28.0089, -15.5329),
     "Vilaflor de Chasna": (28.1562, -16.6359),
     "Villa de Mazo": (28.6090, -17.7780),
